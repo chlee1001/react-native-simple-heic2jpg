@@ -6,17 +6,29 @@ const LINKING_ERROR =
   '- You rebuilt the app after installing the package\n' +
   '- You are not using Expo Go\n';
 
+interface ImageConverterInterface {
+  convertImageAtPath(path: string): Promise<string>;
+}
+
 const SimpleHeic2jpg = NativeModules.SimpleHeic2jpg
   ? NativeModules.SimpleHeic2jpg
-  : new Proxy(
+  : (new Proxy(
       {},
       {
         get() {
           throw new Error(LINKING_ERROR);
         },
       }
-    );
+    ) as ImageConverterInterface);
 
-export function multiply(a: number, b: number): Promise<number> {
-  return SimpleHeic2jpg.multiply(a, b);
+export async function convertImage(imagePath: string): Promise<string> {
+  try {
+    const newPath = await SimpleHeic2jpg.convertImageAtPath(imagePath);
+    if (newPath.startsWith('file://')) {
+      return newPath;
+    }
+    return `file://${newPath}`;
+  } catch (error) {
+    throw error;
+  }
 }
