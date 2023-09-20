@@ -10,7 +10,12 @@
   },
   "dependencies": {
     "react": "18.2.0",
-    "react-native": "0.72.4"
+    "react-native": "0.72.4",
+    "react-native-permissions": "^3.9.2",
+    "@baronha/react-native-multiple-image-picker": "^1.1.1",
+    "exifreader": "^4.13.0",
+    "base64-arraybuffer": "^1.0.2",
+    "react-native-fs": "^2.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
