@@ -24,14 +24,14 @@ export const CAMERA_PERMISSION_LIST = (type: 'CAMERA' | 'LIBRARY') => {
       return [PERMISSIONS.IOS.PHOTO_LIBRARY];
     }
 
-    if (Platform.Version as number >= 33) {
+    if ((Platform.Version as number) >= 33) {
       // 안드로이드 13 이상
       return [
         PERMISSIONS.ANDROID.READ_MEDIA_IMAGES,
         PERMISSIONS.ANDROID.ACCESS_MEDIA_LOCATION,
       ];
     }
-    if (Platform.Version as number >= 29) {
+    if ((Platform.Version as number) >= 29) {
       // 안드로이드 10
       return [
         PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
@@ -49,7 +49,7 @@ export const CAMERA_PERMISSION_LIST = (type: 'CAMERA' | 'LIBRARY') => {
 
 function permissionResult(
   permissions: Record<Permission, PermissionStatus>,
-  permissionList: Permission[],
+  permissionList: Permission[]
 ) {
   const results = permissionList.map((permission) => {
     return permissions[permission] === RESULTS.GRANTED;
@@ -72,7 +72,7 @@ export async function iOSCameraRequestPermission(permissionList: Permission[]) {
   const results = permissionList.map(
     (permission) =>
       permissions[permission] === RESULTS.GRANTED ||
-      permissions[permission] === RESULTS.LIMITED,
+      permissions[permission] === RESULTS.LIMITED
   );
   return results.filter((value) => !value).length === 0;
 }
@@ -82,13 +82,13 @@ export async function iOSCameraCheckPermission(permissionList: Permission[]) {
   const results = permissionList.map(
     (permission) =>
       permissions[permission] === RESULTS.GRANTED ||
-      permissions[permission] === RESULTS.LIMITED,
+      permissions[permission] === RESULTS.LIMITED
   );
   return results.filter((value) => !value).length === 0;
 }
 
 export async function checkAndRequestCameraLibraryPermission(
-  type: 'CAMERA' | 'LIBRARY',
+  type: 'CAMERA' | 'LIBRARY'
 ) {
   const requestPermissionList = CAMERA_PERMISSION_LIST(type);
 
@@ -98,7 +98,7 @@ export async function checkAndRequestCameraLibraryPermission(
       return true;
     }
     const requestResult = await iOSCameraRequestPermission(
-      requestPermissionList,
+      requestPermissionList
     );
     if (requestResult) {
       return true;
@@ -131,7 +131,7 @@ export async function checkAndRequestCameraLibraryPermission(
         style: 'default',
       },
     ],
-    { cancelable: false },
+    { cancelable: false }
   );
   return false;
 }
