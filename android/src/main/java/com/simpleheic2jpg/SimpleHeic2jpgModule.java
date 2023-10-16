@@ -94,7 +94,8 @@ public class SimpleHeic2jpgModule extends ReactContextBaseJavaModule {
 
           String cachePath = saveCacheFile(byteArray);
 
-          ExifInterface exif = new ExifInterface(filePath);
+          String correctedFilePath = filePath.replace("file://", "");
+          ExifInterface exif = new ExifInterface(correctedFilePath);
           ExifInterface newExif = new ExifInterface(cachePath);
           for (String tagName : EXIF_TAG_LIST) {
             String attribute = exif.getAttribute(tagName);
