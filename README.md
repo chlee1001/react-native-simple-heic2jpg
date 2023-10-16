@@ -8,6 +8,9 @@ React Native Component for converts HEIC files on Android and iOS
 npm install react-native-simple-heic2jpg
 
 yarn add react-native-simple-heic2jpg
+
+# For iOS
+cd ios && pod install
 ```
 
 ## Features
