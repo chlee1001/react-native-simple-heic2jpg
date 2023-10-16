@@ -41,7 +41,12 @@
   "keywords": [
     "react-native",
     "ios",
-    "android"
+    "android",
+    "heic",
+    "heif",
+    "jpg",
+    "jpeg",
+    "heic2jpg"
   ],
   "repository": "https://github.com/chlee1001/react-native-simple-heic2jpg",
   "author": "chlee1001 <chlee1001@naver.com> (https://github.com/chlee1001)",
