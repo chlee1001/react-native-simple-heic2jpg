@@ -69,22 +69,42 @@ jobs:
       - name: Check turborepo cache for Android
         run: |
           echo "Running Turbo Dry Run for Android Build"
-          TURBO_OUTPUT=$(yarn --silent turbo run build:android --cache-dir='${{ env.TURBO_CACHE_DIR }}' --dry=json)
 
-          # 출력 내용 확인
-          echo "Turbo Output: $TURBO_OUTPUT" # 디버깅을 위한 임시 로그
+          # Turbo 명령어 실행 및 오류 로그 확인
+          TURBO_OUTPUT=$(yarn --silent turbo run build:android --cache-dir='${{ env.TURBO_CACHE_DIR }}' --dry=json 2>&1)
 
-          if [[ -z "$TURBO_OUTPUT" ]]; then
-            echo "Turbo output is empty or invalid"
+          # Turbo 출력 내용 확인
+          echo "Turbo Output: $TURBO_OUTPUT"
+
+          # Turbo 명령어가 실패했을 경우 처리
+          if [[ $? -ne 0 ]]; then
+            echo "Error: Turbo command failed. Check the output above."
             exit 1
           fi
 
-          TURBO_CACHE_STATUS=$(node -p "JSON.parse('$TURBO_OUTPUT').tasks.find(t => t.task === 'build:android')?.cache?.status")
+          # 출력이 비어 있거나 유효하지 않을 경우 처리
+          if [[ -z "$TURBO_OUTPUT" ]]; then
+            echo "Error: Turbo output is empty or invalid."
+            exit 1
+          fi
+
+          # JSON 파싱 시도
+          TURBO_CACHE_STATUS=$(node -e "
+            let output = '$TURBO_OUTPUT';
+            try {
+              let parsed = JSON.parse(output);
+              let status = parsed.tasks.find(t => t.task === 'build:android')?.cache?.status;
+              console.log(status || 'MISS');
+            } catch (e) {
+              console.error('Failed to parse Turbo output as JSON.');
+              process.exit(1);
+            }
+          ")
 
           if [[ $TURBO_CACHE_STATUS == "HIT" ]]; then
             echo "turbo_cache_hit=1" >> $GITHUB_ENV
           else
-            echo "Turbo cache miss or invalid status"
+            echo "Turbo cache miss or invalid status."
           fi
         shell: bash
 
