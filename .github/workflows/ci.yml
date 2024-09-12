@@ -71,7 +71,7 @@ jobs:
           echo "Running Turbo Dry Run for Android Build"
 
           # Turbo 명령어 실행 및 오류 로그 확인
-          TURBO_OUTPUT=$(yarn --silent turbo run build:android --cache-dir=".turbo/android" --dry=json 2>&1)
+          TURBO_OUTPUT=$(yarn turbo run build:android --cache-dir=".turbo/android" --dry=json 2>&1)
 
           # 출력 내용을 파일에 저장
           echo "$TURBO_OUTPUT" > turbo_output.log
