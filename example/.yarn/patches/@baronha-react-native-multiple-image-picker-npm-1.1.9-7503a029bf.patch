@@ -1,0 +1,189 @@
+diff --git a/android/src/main/java/com/reactnativemultipleimagepicker/MultipleImagePickerModule.kt b/android/src/main/java/com/reactnativemultipleimagepicker/MultipleImagePickerModule.kt
+index a4bd8c898156072bb28878da8827f57c0fc1b41a..633ee638c37e1136c556ae64b39cf69b8cf2be17 100644
+--- a/android/src/main/java/com/reactnativemultipleimagepicker/MultipleImagePickerModule.kt
++++ b/android/src/main/java/com/reactnativemultipleimagepicker/MultipleImagePickerModule.kt
+@@ -23,7 +23,7 @@ import java.util.*
+ 
+ 
+ class MultipleImagePickerModule(reactContext: ReactApplicationContext) :
+-        ReactContextBaseJavaModule(reactContext), IApp {
++    ReactContextBaseJavaModule(reactContext), IApp {
+ 
+     override fun getName(): String {
+         return "MultipleImagePicker"
+@@ -55,48 +55,48 @@ class MultipleImagePickerModule(reactContext: ReactApplicationContext) :
+         setConfiguration(options)
+ 
+         PictureSelector.create(activity)
+-                .openGallery(if (mediaType == "video") SelectMimeType.ofVideo() else if (mediaType == "image") SelectMimeType.ofImage() else SelectMimeType.ofAll())
+-                .setImageEngine(imageEngine)
+-                .setMaxSelectNum(maxSelectedAssets)
+-                .setImageSpanCount(numberOfColumn)
+-                .setCropEngine(onSetCropEngine())
+-                .isDirectReturnSingle(true)
+-                .isSelectZoomAnim(true)
+-                .isPageStrategy(true, 50)
+-                .isWithSelectVideoImage(true)
+-                .setRecordVideoMaxSecond(maxVideoDuration)
+-                .setMaxVideoSelectNum(if (maxVideo != 20) maxVideo else maxSelectedAssets)
+-                .isMaxSelectEnabledMask(true)
+-                .setSelectedData(selectedAssets)
+-                .setSelectorUIStyle(style)
+-                .isPreviewImage(isPreview)
+-                .isPreviewVideo(isPreview)
+-                .isDisplayCamera(isCamera)
+-                .setSelectionMode(if (singleSelectedMode) SelectModeConfig.SINGLE else SelectModeConfig.MULTIPLE)
+-                .forResult(object : OnResultCallbackListener<LocalMedia?> {
+-                    override fun onResult(result: ArrayList<LocalMedia?>?) {
+-                        val localMedia: WritableArray = WritableNativeArray()
+-                        if (result?.size == 0) {
+-                            promise.resolve(localMedia)
+-                            return
+-                        }
+-                        if (result?.size == selectedAssets.size && (result[result.size - 1] as LocalMedia).id == (selectedAssets[selectedAssets.size - 1].id)) {
+-                            return
+-                        }
+-                        if (result != null) {
+-                            for (i in 0 until result.size) {
+-                                val item: LocalMedia = result[i] as LocalMedia
+-                                val media: WritableMap = createAttachmentResponse(item)
+-                                localMedia.pushMap(media)
+-                            }
+-                        }
++            .openGallery(if (mediaType == "video") SelectMimeType.ofVideo() else if (mediaType == "image") SelectMimeType.ofImage() else SelectMimeType.ofAll())
++            .setImageEngine(imageEngine)
++            .setMaxSelectNum(maxSelectedAssets)
++            .setImageSpanCount(numberOfColumn)
++            .setCropEngine(onSetCropEngine())
++            .isDirectReturnSingle(true)
++            .isSelectZoomAnim(true)
++            .isPageStrategy(true, 50)
++            .isWithSelectVideoImage(true)
++            .setRecordVideoMaxSecond(maxVideoDuration)
++            .setMaxVideoSelectNum(if (maxVideo != 20) maxVideo else maxSelectedAssets)
++            .isMaxSelectEnabledMask(true)
++            .setSelectedData(selectedAssets)
++            .setSelectorUIStyle(style)
++            .isPreviewImage(isPreview)
++            .isPreviewVideo(isPreview)
++            .isDisplayCamera(isCamera)
++            .setSelectionMode(if (singleSelectedMode) SelectModeConfig.SINGLE else SelectModeConfig.MULTIPLE)
++            .forResult(object : OnResultCallbackListener<LocalMedia?> {
++                override fun onResult(result: ArrayList<LocalMedia?>?) {
++                    val localMedia: WritableArray = WritableNativeArray()
++                    if (result?.size == 0) {
+                         promise.resolve(localMedia)
++                        return
+                     }
+-
+-                    override fun onCancel() {
+-                        promise.reject("PICKER_CANCELLED", "User has canceled", null)
++                    if (result?.size == selectedAssets.size && (result[result.size - 1] as LocalMedia).id == (selectedAssets[selectedAssets.size - 1].id)) {
++                        return
+                     }
+-                })
++                    if (result != null) {
++                        for (i in 0 until result.size) {
++                            val item: LocalMedia = result[i] as LocalMedia
++                            val media: WritableMap = createAttachmentResponse(item)
++                            localMedia.pushMap(media)
++                        }
++                    }
++                    promise.resolve(localMedia)
++                }
++
++                override fun onCancel() {
++                    promise.reject("PICKER_CANCELLED", "User has canceled", null)
++                }
++            })
+     }
+ 
+     private fun onSetCropEngine(): CropEngine? {
+@@ -155,36 +155,36 @@ class MultipleImagePickerModule(reactContext: ReactApplicationContext) :
+ 
+         // ANIMATION SLIDE FROM BOTTOM
+         val animationStyle = PictureWindowAnimationStyle()
+-        animationStyle.setActivityEnterAnimation(R.anim.ps_anim_up_in)
+-        animationStyle.setActivityExitAnimation(R.anim.ps_anim_down_out)
++        animationStyle.setActivityEnterAnimation(com.luck.picture.lib.R.anim.ps_anim_up_in)
++        animationStyle.setActivityExitAnimation(com.luck.picture.lib.R.anim.ps_anim_down_out)
+ 
+         // TITLE BAR
+         val titleBar = TitleBarStyle()
+         titleBar.titleBackgroundColor =
+-                ContextCompat.getColor(appContext, R.color.app_color_white)
++            ContextCompat.getColor(appContext, R.color.app_color_white)
+ 
+         titleBar.isHideCancelButton = true
+         titleBar.isAlbumTitleRelativeLeft = true
+ 
+-        titleBar.titleAlbumBackgroundResource = R.drawable.ps_album_bg
+-        titleBar.titleDrawableRightResource = R.drawable.ps_ic_grey_arrow
+-        titleBar.previewTitleLeftBackResource = R.drawable.ps_ic_black_back
+-        titleBar.titleLeftBackResource = R.drawable.ps_ic_black_back
++        titleBar.titleAlbumBackgroundResource = com.luck.picture.lib.R.drawable.ps_album_bg
++        titleBar.titleDrawableRightResource = com.luck.picture.lib.R.drawable.ps_ic_grey_arrow
++        titleBar.previewTitleLeftBackResource = com.luck.picture.lib.R.drawable.ps_ic_black_back
++        titleBar.titleLeftBackResource = com.luck.picture.lib.R.drawable.ps_ic_black_back
+         titleBar.isHideCancelButton = true
+ 
+         // BOTTOM BAR
+         val bottomBar = BottomNavBarStyle()
+         bottomBar.bottomPreviewNormalTextColor =
+-                ContextCompat.getColor(appContext, R.color.app_color_pri)
++            ContextCompat.getColor(appContext, R.color.app_color_pri)
+         bottomBar.bottomPreviewSelectTextColor =
+-                ContextCompat.getColor(appContext, R.color.app_color_pri)
++            ContextCompat.getColor(appContext, R.color.app_color_pri)
+         bottomBar.bottomNarBarBackgroundColor =
+-                ContextCompat.getColor(appContext, R.color.ps_color_white)
++            ContextCompat.getColor(appContext, com.luck.picture.lib.R.color.ps_color_white)
+         bottomBar.bottomSelectNumResources = R.drawable.num_oval_orange
+         bottomBar.bottomEditorTextColor =
+-                ContextCompat.getColor(appContext, R.color.ps_color_53575e)
++            ContextCompat.getColor(appContext, com.luck.picture.lib.R.color.ps_color_53575e)
+         bottomBar.bottomOriginalTextColor =
+-                ContextCompat.getColor(appContext, R.color.ps_color_53575e)
++            ContextCompat.getColor(appContext, com.luck.picture.lib.R.color.ps_color_53575e)
+         bottomBar.bottomPreviewNormalTextColor = R.color.app_color_53575e
+         bottomBar.bottomPreviewNormalTextColor = Color.BLACK
+         bottomBar.isCompleteCountTips = false
+@@ -198,9 +198,9 @@ class MultipleImagePickerModule(reactContext: ReactApplicationContext) :
+         mainStyle.isSelectNumberStyle = true
+         mainStyle.selectBackground = R.drawable.picture_selector
+         mainStyle.mainListBackgroundColor =
+-                ContextCompat.getColor(appContext, R.color.ps_color_white)
++            ContextCompat.getColor(appContext, com.luck.picture.lib.R.color.ps_color_white)
+         mainStyle.previewSelectBackground =
+-                R.drawable.picture_selector
++            R.drawable.picture_selector
+ 
+         // custom select text on top
+         mainStyle.selectText = doneTitle
+@@ -209,7 +209,7 @@ class MultipleImagePickerModule(reactContext: ReactApplicationContext) :
+ 
+ 
+         mainStyle.selectNormalTextColor =
+-                ContextCompat.getColor(appContext, R.color.ps_color_9b)
++            ContextCompat.getColor(appContext, com.luck.picture.lib.R.color.ps_color_9b)
+         mainStyle.selectTextColor = primaryColor
+         mainStyle.selectText = doneTitle
+ 
+@@ -230,7 +230,7 @@ class MultipleImagePickerModule(reactContext: ReactApplicationContext) :
+             val assetsType = options.getType("selectedAssets")
+             if (assetsType == ReadableType.Array) {
+                 val assets: ReadableNativeArray =
+-                        options.getArray("selectedAssets") as ReadableNativeArray
++                    options.getArray("selectedAssets") as ReadableNativeArray
+                 if (assets.size() > 0) {
+                     val list = mutableListOf<LocalMedia>()
+                     for (i in 0 until assets.size()) {
+@@ -291,7 +291,7 @@ class MultipleImagePickerModule(reactContext: ReactApplicationContext) :
+         val image = retriever.getFrameAtTime(1000000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+ 
+         val fullPath: String =
+-                reactApplicationContext.applicationContext.cacheDir.absolutePath.toString() + "/thumbnails"
++            reactApplicationContext.applicationContext.cacheDir.absolutePath.toString() + "/thumbnails"
+         try {
+             val fileName = "thumb-" + UUID.randomUUID().toString() + ".jpeg"
+             val file = File(fullPath, fileName)
