@@ -68,10 +68,20 @@ jobs:
 
       - name: Check turborepo cache for Android
         run: |
-          TURBO_OUTPUT=$(yarn --silent turbo run build:android --cache-dir="${{ env.TURBO_CACHE_DIR }}" --dry=json)
+          echo "Running Turbo Dry Run for Android Build"
 
-          # 출력된 내용을 파일에 저장
+          # Turbo 명령어 실행 및 오류 로그 확인
+          TURBO_OUTPUT=$(yarn --silent turbo run build:android --cache-dir=".turbo/android" --dry=json 2>&1)
+
+          # 출력 내용을 파일에 저장
           echo "$TURBO_OUTPUT" > turbo_output.log
+
+          # 터보 명령어가 실패했을 경우 처리
+          if [[ $? -ne 0 ]]; then
+            echo "Error: Turbo command failed. Check turbo_output.log for details."
+            cat turbo_output.log  # 오류 발생 시 로그 파일 내용을 출력
+            exit 1
+          fi
 
           # Node.js에서 직접 JSON을 파싱하여 캐시 상태 확인
           TURBO_CACHE_STATUS=$(node -e "
