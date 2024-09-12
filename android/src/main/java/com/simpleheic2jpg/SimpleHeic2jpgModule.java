@@ -79,11 +79,12 @@ public class SimpleHeic2jpgModule extends ReactContextBaseJavaModule {
   public void convertImageAtPath(String filePath, Promise promise) {
     try {
       String fileExtension = getFileExtension(filePath);
-      String correctedFilePath = filePath.replace("file://", "");
       Log.i(TAG, "convertImageAtPath: " + filePath);
       Log.i(TAG, "convertImageAtPath: fileExtension: " + fileExtension);
 
       if (fileExtension.equals("heic") || fileExtension.equals("heif")) {
+        String correctedFilePath = filePath.replace("file://", "");
+
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
         Bitmap bitmap = BitmapFactory.decodeFile(correctedFilePath, options);
