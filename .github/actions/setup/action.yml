@@ -20,6 +20,14 @@ runs:
           ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           ${{ runner.os }}-yarn-
 
+    - name: Enable Corepack
+      run: corepack enable
+      shell: bash
+
+    - name: Prepare the correct version of Yarn
+      run: corepack prepare yarn@3.6.4 --activate
+      shell: bash
+
     - name: Install dependencies
       if: steps.yarn-cache.outputs.cache-hit != 'true'
       run: |
