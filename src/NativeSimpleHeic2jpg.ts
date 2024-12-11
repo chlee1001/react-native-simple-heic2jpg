@@ -11,6 +11,7 @@ export interface ImageConverterInterface {
 
 // TurboModuleRegistry로 TurboModule 가져오기 (New Architecture)
 const TurboModuleInstance =
+  // @ts-ignore
   global.__turboModuleProxy != null
     ? TurboModuleRegistry.getEnforcing<Spec>('SimpleHeic2jpg')
     : null;
