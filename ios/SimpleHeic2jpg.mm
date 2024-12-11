@@ -8,9 +8,32 @@
 
 RCT_EXPORT_MODULE(SimpleHeic2jpg)
 
+// New Architecture에서 TurboModule 지원
+#ifdef RCT_NEW_ARCH_ENABLED
+// TurboModule 메서드 구현
 - (void)convertImageAtPath:(NSString *)path
-                   resolve:(RCTPromiseResolveBlock)resolve
-                    reject:(RCTPromiseRejectBlock)reject {
+resolve:(RCTPromiseResolveBlock)resolve
+reject:(RCTPromiseRejectBlock)reject {
+  [self convertImageAtPathImplementation:path resolve:resolve reject:reject];
+}
+
+- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
+(const facebook::react::ObjCTurboModule::InitParams &)params {
+  return std::make_shared<facebook::react::NativeSimpleHeic2jpgSpecJSI>(params);
+}
+#else
+// Old Architecture 메서드
+RCT_EXPORT_METHOD(convertImageAtPath:(NSString *)path
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+  [self convertImageAtPathImplementation:path resolve:resolve reject:reject];
+}
+#endif
+
+// 공통 구현 (Old/New Architecture에서 호출)
+- (void)convertImageAtPathImplementation:(NSString *)path
+                                 resolve:(RCTPromiseResolveBlock)resolve
+                                  reject:(RCTPromiseRejectBlock)reject {
   @try {
     if (!path || [path isEqualToString:@""]) {
       reject(@"Invalid Path", @"The path is invalid or empty", nil);
@@ -39,7 +62,6 @@ RCT_EXPORT_MODULE(SimpleHeic2jpg)
     NSString *filePath = [path stringByReplacingOccurrencesOfString:@"file://" withString:@""];
     NSString *outputImagePath = [[filePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"jpeg"];
     NSURL *destinationURL = [NSURL fileURLWithPath:outputImagePath];
-
 
     // Handle HEIC or HEIF conversion to JPEG
     if (CFStringCompare(imageType, CFSTR("public.heic"), 0) == kCFCompareEqualTo ||
@@ -88,10 +110,8 @@ RCT_EXPORT_MODULE(SimpleHeic2jpg)
     }
   } @catch (NSException *exception) {
     reject(@"Error", exception.reason, nil);
-
   }
 }
-
 
 - (void)createImageDestination:(NSData *)imageData
                    imageSource:(CGImageSourceRef)imageSource
@@ -132,8 +152,4 @@ RCT_EXPORT_MODULE(SimpleHeic2jpg)
   }
 }
 
-- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
-(const facebook::react::ObjCTurboModule::InitParams &)params {
-  return std::make_shared<facebook::react::NativeSimpleHeic2jpgSpecJSI>(params);
-}
 @end
