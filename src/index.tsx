@@ -1,29 +1,16 @@
-import { NativeModules, Platform } from 'react-native';
+import SimpleHeic2jpg from './NativeSimpleHeic2jpg';
 
-const LINKING_ERROR =
-  `The package 'react-native-simple-heic2jpg' doesn't seem to be linked. Make sure: \n\n` +
-  Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
-  '- You rebuilt the app after installing the package\n' +
-  '- You are not using Expo Go\n';
+async function convertImage(imagePath: string): Promise<string> {
+  if (!SimpleHeic2jpg || !SimpleHeic2jpg.convertImageAtPath) {
+    throw new Error('SimpleHeic2jpg module is not available');
+  }
 
-interface ImageConverterInterface {
-  convertImageAtPath(path: string): Promise<string>;
-}
-
-const SimpleHeic2jpg = NativeModules.SimpleHeic2jpg
-  ? NativeModules.SimpleHeic2jpg
-  : (new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(LINKING_ERROR);
-        },
-      }
-    ) as ImageConverterInterface);
-
-export async function convertImage(imagePath: string): Promise<string> {
   try {
     const newPath = await SimpleHeic2jpg.convertImageAtPath(imagePath);
+    if (!newPath) {
+      throw new Error('convertImageAtPath returned an invalid result');
+    }
+
     if (newPath.startsWith('file://')) {
       return newPath;
     }
@@ -32,3 +19,5 @@ export async function convertImage(imagePath: string): Promise<string> {
     throw error;
   }
 }
+
+export { convertImage };

@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { convertImage } from 'react-native-simple-heic2jpg';
 import { checkAndRequestCameraLibraryPermission } from './utils/permissionHelper';
@@ -9,9 +7,8 @@ import { getImageExif } from './utils/imageHelper';
 
 export default function App() {
   const handleImageLibrary = async () => {
-    const libraryPermission = await checkAndRequestCameraLibraryPermission(
-      'LIBRARY'
-    );
+    const libraryPermission =
+      await checkAndRequestCameraLibraryPermission('LIBRARY');
     if (!libraryPermission) return;
 
     try {
