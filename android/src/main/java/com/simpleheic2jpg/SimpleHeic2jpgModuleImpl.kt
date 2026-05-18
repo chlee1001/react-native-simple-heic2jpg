@@ -2,21 +2,18 @@ package com.simpleheic2jpg
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Log
 import androidx.exifinterface.media.ExifInterface
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
-import java.io.ByteArrayOutputStream
-
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.util.UUID
 
 object SimpleHeic2jpgModuleImpl {
   const val NAME = "SimpleHeic2jpg"
 
-  private const val TAG = "ImageConverter"
   private const val CACHE_DIR = "convert_cache"
-
 
   private val EXIF_TAG_LIST = listOf(
     ExifInterface.TAG_DATETIME,
@@ -58,49 +55,70 @@ object SimpleHeic2jpgModuleImpl {
   )
 
   private fun getFileExtension(filePath: String): String {
-    return filePath.substring(filePath.lastIndexOf(".") + 1).lowercase()
+    return filePath.substringAfterLast('.', "").lowercase()
   }
 
-  private fun saveCacheFile(context: ReactApplicationContext,  data: ByteArray): String {
+  private fun ensureCacheDir(context: ReactApplicationContext): File {
     val cacheDir = File(context.cacheDir, CACHE_DIR)
-    if (!cacheDir.exists()) {
-      cacheDir.mkdir()
+    if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+      throw IOException("Failed to create image conversion cache directory.")
     }
-    val fileName = "${System.currentTimeMillis()}.jpg"
-    val cacheFile = File(cacheDir, fileName)
-    val fos = FileOutputStream(cacheFile)
-    fos.write(data)
-    fos.flush()
-    fos.close()
+    if (!cacheDir.isDirectory) {
+      throw IOException("Image conversion cache path is not a directory.")
+    }
+    return cacheDir
+  }
+
+  private fun createCacheFile(cacheDir: File): File {
+    repeat(3) {
+      val cacheFile = File(cacheDir, "${UUID.randomUUID()}.jpg")
+      if (cacheFile.createNewFile()) {
+        return cacheFile
+      }
+    }
+    throw IOException("Failed to create image conversion cache file.")
+  }
+
+  private fun saveBitmapToCache(context: ReactApplicationContext, bitmap: Bitmap): String {
+    val cacheFile = createCacheFile(ensureCacheDir(context))
+    try {
+      FileOutputStream(cacheFile).use { outputStream ->
+        if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)) {
+          throw IOException("Failed to encode image as JPEG.")
+        }
+      }
+    } catch (ex: Exception) {
+      cacheFile.delete()
+      throw ex
+    }
     return cacheFile.absolutePath
   }
 
   fun convertImageAtPath(context: ReactApplicationContext, filePath: String, promise: Promise) {
     try {
       val fileExtension = getFileExtension(filePath)
-      Log.i(TAG, "convertImageAtPath: $filePath");
-      Log.i(TAG, "convertImageAtPath: fileExtension: $fileExtension");
 
       if (fileExtension == "heic" || fileExtension == "heif") {
-        val correctedFilePath = filePath.replace("file://", "")
+        val correctedFilePath = filePath.removePrefix("file://")
         val options = BitmapFactory.Options()
         options.inPreferredConfig = Bitmap.Config.ARGB_8888
         val bitmap = BitmapFactory.decodeFile(correctedFilePath, options)
         if (bitmap != null) {
-          val stream = ByteArrayOutputStream()
-          bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-          val byteArray = stream.toByteArray()
-          val cachePath = saveCacheFile(context, byteArray)
-          val exif = ExifInterface(correctedFilePath)
-          val newExif = ExifInterface(cachePath)
-          for (tagName in EXIF_TAG_LIST) {
-            val attribute = exif.getAttribute(tagName)
-            if (attribute != null) {
-              newExif.setAttribute(tagName, attribute)
+          try {
+            val cachePath = saveBitmapToCache(context, bitmap)
+            val exif = ExifInterface(correctedFilePath)
+            val newExif = ExifInterface(cachePath)
+            for (tagName in EXIF_TAG_LIST) {
+              val attribute = exif.getAttribute(tagName)
+              if (attribute != null) {
+                newExif.setAttribute(tagName, attribute)
+              }
             }
+            newExif.saveAttributes()
+            promise.resolve(cachePath)
+          } finally {
+            bitmap.recycle()
           }
-          newExif.saveAttributes()
-          promise.resolve(cachePath)
         } else {
           promise.reject(Exception("Failed to convert image. Bitmap is null."))
         }

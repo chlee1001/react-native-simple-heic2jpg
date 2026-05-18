@@ -1,5 +1,4 @@
 #import "SimpleHeic2jpg.h"
-#import <React/RCTLog.h>
 #import <UIKit/UIKit.h>
 #import <ImageIO/ImageIO.h>
 #import <CoreImage/CoreImage.h>
@@ -34,19 +33,20 @@ RCT_EXPORT_METHOD(convertImageAtPath:(NSString *)path
 - (void)convertImageAtPathImplementation:(NSString *)path
                                  resolve:(RCTPromiseResolveBlock)resolve
                                   reject:(RCTPromiseRejectBlock)reject {
+  CGImageSourceRef imageSource = NULL;
+
   @try {
     if (!path || [path isEqualToString:@""]) {
       reject(@"Invalid Path", @"The path is invalid or empty", nil);
       return;
     }
 
-    NSURL *url = [NSURL URLWithString:path];
+    NSURL *url = [self normalizedLocalFileURLForPath:path reject:reject];
     if (!url) {
-      reject(@"Invalid URL", @"The URL is invalid", nil);
       return;
     }
 
-    CGImageSourceRef imageSource = CGImageSourceCreateWithURL((__bridge CFURLRef)url, NULL);
+    imageSource = CGImageSourceCreateWithURL((__bridge CFURLRef)url, NULL);
     if (!imageSource) {
       reject(@"Error Creating Image Source", @"Cannot create image source", nil);
       return;
@@ -54,31 +54,26 @@ RCT_EXPORT_METHOD(convertImageAtPath:(NSString *)path
 
     CFStringRef imageType = CGImageSourceGetType(imageSource);
     if (!imageType) {
-      CFRelease(imageSource);
       reject(@"Error Getting Image Type", @"Cannot get image type", nil);
       return;
     }
 
-    NSString *filePath = [path stringByReplacingOccurrencesOfString:@"file://" withString:@""];
-    NSString *outputImagePath = [[filePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"jpeg"];
-    NSURL *destinationURL = [NSURL fileURLWithPath:outputImagePath];
-
     // Handle HEIC or HEIF conversion to JPEG
     if (CFStringCompare(imageType, CFSTR("public.heic"), 0) == kCFCompareEqualTo ||
         CFStringCompare(imageType, CFSTR("public.heif"), 0) == kCFCompareEqualTo) {
+      NSString *outputImagePath = [self uniqueJPEGOutputPathForFilePath:url.path];
+      NSURL *destinationURL = [NSURL fileURLWithPath:outputImagePath];
 
       NSData *tempImageData = [NSData dataWithContentsOfURL:url];
       UIImage *image = [UIImage imageWithData:tempImageData];
       if (!image) {
-        CFRelease(imageSource);
         reject(@"Error Loading Image", @"Failed to load image from path", nil);
         return;
       }
 
       CGImageRef cgImage = image.CGImage;
-      CGColorSpaceRef colorSpace = CGImageGetColorSpace(cgImage);
+      CGColorSpaceRef colorSpace = cgImage ? CGImageGetColorSpace(cgImage) : NULL;
       if (!cgImage || !colorSpace) {
-        CFRelease(imageSource);
         reject(@"Error Processing Image", @"Failed to process image data", nil);
         return;
       }
@@ -89,7 +84,6 @@ RCT_EXPORT_METHOD(convertImageAtPath:(NSString *)path
                                                  colorSpace:colorSpace
                                                     options:@{}];
       if (!jpegData) {
-        CFRelease(imageSource);
         reject(@"Image Conversion Failed", @"Image conversion to JPEG representation failed", nil);
         return;
       }
@@ -102,15 +96,66 @@ RCT_EXPORT_METHOD(convertImageAtPath:(NSString *)path
                             reject:reject];
     } else if (CFStringCompare(imageType, CFSTR("public.jpeg"), 0) == kCFCompareEqualTo ||
                CFStringCompare(imageType, CFSTR("public.png"), 0) == kCFCompareEqualTo) {
-      CFRelease(imageSource);
       resolve(path);
     } else {
-      CFRelease(imageSource);
       reject(@"Unsupported Image Format", @"Unsupported image format", nil);
     }
   } @catch (NSException *exception) {
     reject(@"Error", exception.reason, nil);
+  } @finally {
+    if (imageSource) {
+      CFRelease(imageSource);
+    }
   }
+}
+
+- (NSURL *)normalizedLocalFileURLForPath:(NSString *)path
+                                  reject:(RCTPromiseRejectBlock)reject {
+  NSRange colonRange = [path rangeOfString:@":"];
+  NSRange slashRange = [path rangeOfString:@"/"];
+  BOOL hasScheme = colonRange.location != NSNotFound &&
+                   (slashRange.location == NSNotFound || colonRange.location < slashRange.location);
+
+  if (hasScheme) {
+    NSString *scheme = [[path substringToIndex:colonRange.location] lowercaseString];
+    if (![scheme isEqualToString:@"file"]) {
+      reject(@"Unsupported URI", @"Only local file paths and file:// URIs are supported", nil);
+      return nil;
+    }
+
+    NSURL *candidateURL = [NSURL URLWithString:path];
+    if (!candidateURL.isFileURL || candidateURL.path.length == 0) {
+      reject(@"Invalid URL", @"The file:// URI is invalid", nil);
+      return nil;
+    }
+    if (candidateURL.host.length > 0 &&
+        ![candidateURL.host.lowercaseString isEqualToString:@"localhost"]) {
+      reject(@"Unsupported URI", @"Only local file paths and local file:// URIs are supported", nil);
+      return nil;
+    }
+
+    return [NSURL fileURLWithPath:candidateURL.path];
+  }
+
+  return [NSURL fileURLWithPath:path];
+}
+
+- (NSString *)uniqueJPEGOutputPathForFilePath:(NSString *)filePath {
+  NSString *directory = [filePath stringByDeletingLastPathComponent];
+  NSString *baseName = [[filePath lastPathComponent] stringByDeletingPathExtension];
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+
+  for (NSUInteger attempt = 0; attempt < 3; attempt++) {
+    NSString *candidateFileName = [NSString stringWithFormat:@"%@-%@.jpeg", baseName, [NSUUID UUID].UUIDString];
+    NSString *candidatePath = [directory stringByAppendingPathComponent:candidateFileName];
+
+    if (![fileManager fileExistsAtPath:candidatePath]) {
+      return candidatePath;
+    }
+  }
+
+  NSString *fallbackFileName = [NSString stringWithFormat:@"%@-%@.jpeg", baseName, [NSUUID UUID].UUIDString];
+  return [directory stringByAppendingPathComponent:fallbackFileName];
 }
 
 - (void)createImageDestination:(NSData *)imageData
@@ -118,37 +163,45 @@ RCT_EXPORT_METHOD(convertImageAtPath:(NSString *)path
                 destinationURL:(NSURL *)destinationURL
                        resolve:(RCTPromiseResolveBlock)resolve
                         reject:(RCTPromiseRejectBlock)reject {
+  CGImageSourceRef source = NULL;
+  CGImageDestinationRef destination = NULL;
+  CFDictionaryRef imageProperties = NULL;
+
   @try {
     CFDictionaryRef options = (__bridge CFDictionaryRef) @{(id)kCGImageSourceShouldCache : @NO};
-    CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef)imageData, options);
+    source = CGImageSourceCreateWithData((__bridge CFDataRef)imageData, options);
     if (!source) {
       reject(@"Error Creating Image Source", @"Failed to create image source with JPEG data", nil);
       return;
     }
 
-    CFStringRef type = CGImageSourceGetType(source);
-    CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)destinationURL, type, 1, NULL);
+    destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)destinationURL, CFSTR("public.jpeg"), 1, NULL);
     if (!destination) {
-      CFRelease(source);
       reject(@"Error Creating Image Destination", [NSString stringWithFormat:@"Failed to create image destination at URL: %@", destinationURL], nil);
       return;
     }
 
-    CFDictionaryRef imageProperties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, NULL);
+    imageProperties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, NULL);
     CGImageDestinationAddImageFromSource(destination, source, 0, imageProperties);
 
     if (!CGImageDestinationFinalize(destination)) {
-      CFRelease(destination);
-      CFRelease(source);
       reject(@"Error Writing Image", @"Failed to finalize image destination", nil);
       return;
     }
 
-    CFRelease(destination);
-    CFRelease(source);
     resolve(destinationURL.path);
   } @catch (NSException *exception) {
     reject(@"Error Writing Image", exception.reason, nil);
+  } @finally {
+    if (imageProperties) {
+      CFRelease(imageProperties);
+    }
+    if (destination) {
+      CFRelease(destination);
+    }
+    if (source) {
+      CFRelease(source);
+    }
   }
 }
 
