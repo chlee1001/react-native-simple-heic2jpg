@@ -1,6 +1,6 @@
 {
   "name": "react-native-simple-heic2jpg",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "React Native Component for converts HEIC files on Android and iOS",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",
