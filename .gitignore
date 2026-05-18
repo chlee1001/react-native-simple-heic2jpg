@@ -84,3 +84,6 @@ lib/
 !ios/generated/**
 !android/generated/
 !android/generated/**
+
+.omx
+.omc
