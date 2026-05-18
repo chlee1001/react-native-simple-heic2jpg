@@ -13,12 +13,12 @@
     "pod-install-old": "cd ios && bundle exec pod deintegrate && RCT_NEW_ARCH_ENABLED=0 bundle exec pod install"
   },
   "dependencies": {
-    "@baronha/react-native-multiple-image-picker": "^1.1.9",
     "base64-arraybuffer": "^1.0.2",
     "exifreader": "^4.25.0",
     "react": "18.3.1",
     "react-native": "0.76.5",
     "react-native-fs": "^2.20.0",
+    "react-native-image-picker": "^8.2.1",
     "react-native-permissions": "^5.2.1"
   },
   "devDependencies": {
@@ -35,8 +35,5 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "resolutions": {
-    "@baronha/react-native-multiple-image-picker@^1.1.9": "patch:@baronha/react-native-multiple-image-picker@npm%3A1.1.9#./.yarn/patches/@baronha-react-native-multiple-image-picker-npm-1.1.9-7503a029bf.patch"
   }
 }
