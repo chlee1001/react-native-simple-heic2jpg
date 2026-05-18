@@ -78,5 +78,9 @@ android/keystores/debug.keystore
 lib/
 
 # React Native Codegen
-ios/generated
-android/generated
+# `codegenConfig.includesGeneratedCode` is true, so these native specs are
+# required source artifacts for clean New Architecture builds.
+!ios/generated/
+!ios/generated/**
+!android/generated/
+!android/generated/**
