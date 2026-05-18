@@ -91,7 +91,8 @@
     "typescript": "^5.2.2"
   },
   "resolutions": {
-    "@types/react": "^19.2.0"
+    "@types/react": "^19.2.0",
+    "conventional-changelog-angular": "^8.0.0"
   },
   "peerDependencies": {
     "react": "*",
