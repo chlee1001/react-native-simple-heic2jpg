@@ -42,7 +42,7 @@
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
-    "postinstall": "node scripts/fix-bin-permissions.js",
+    "fix-bins": "node scripts/fix-bin-permissions.js",
     "prepare": "bob build",
     "release": "release-it"
   },
