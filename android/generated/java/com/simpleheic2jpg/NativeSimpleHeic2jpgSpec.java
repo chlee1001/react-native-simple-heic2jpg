@@ -35,4 +35,8 @@ public abstract class NativeSimpleHeic2jpgSpec extends ReactContextBaseJavaModul
   @ReactMethod
   @DoNotStrip
   public abstract void convertImageAtPath(String path, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void convertImageAtPathAsBase64(String path, Promise promise);
 }

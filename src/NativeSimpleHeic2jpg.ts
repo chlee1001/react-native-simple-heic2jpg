@@ -3,10 +3,12 @@ import { TurboModuleRegistry, NativeModules } from 'react-native';
 
 export interface Spec extends TurboModule {
   convertImageAtPath(path: string): Promise<string>;
+  convertImageAtPathAsBase64(path: string): Promise<string>;
 }
 
 export interface ImageConverterInterface {
   convertImageAtPath(path: string): Promise<string>;
+  convertImageAtPathAsBase64(path: string): Promise<string>;
 }
 
 // TurboModuleRegistry로 TurboModule 가져오기 (New Architecture)

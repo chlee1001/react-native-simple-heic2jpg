@@ -17,9 +17,15 @@ static facebook::jsi::Value __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertIm
   return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, PromiseKind, "convertImageAtPath", "(Ljava/lang/String;Lcom/facebook/react/bridge/Promise;)V", args, count, cachedMethodId);
 }
 
+static facebook::jsi::Value __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPathAsBase64(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, PromiseKind, "convertImageAtPathAsBase64", "(Ljava/lang/String;Lcom/facebook/react/bridge/Promise;)V", args, count, cachedMethodId);
+}
+
 NativeSimpleHeic2jpgSpecJSI::NativeSimpleHeic2jpgSpecJSI(const JavaTurboModule::InitParams &params)
   : JavaTurboModule(params) {
   methodMap_["convertImageAtPath"] = MethodMetadata {1, __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPath};
+  methodMap_["convertImageAtPathAsBase64"] = MethodMetadata {1, __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPathAsBase64};
 }
 
 std::shared_ptr<TurboModule> RNSimpleHeic2jpgSpec_ModuleProvider(const std::string &moduleName, const JavaTurboModule::InitParams &params) {
