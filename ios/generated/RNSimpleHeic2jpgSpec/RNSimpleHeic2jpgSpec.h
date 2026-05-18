@@ -36,6 +36,9 @@
 - (void)convertImageAtPath:(NSString *)path
                    resolve:(RCTPromiseResolveBlock)resolve
                     reject:(RCTPromiseRejectBlock)reject;
+- (void)convertImageAtPathAsBase64:(NSString *)path
+                           resolve:(RCTPromiseResolveBlock)resolve
+                            reject:(RCTPromiseRejectBlock)reject;
 
 @end
 

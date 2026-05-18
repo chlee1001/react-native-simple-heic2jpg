@@ -14,5 +14,9 @@ class SimpleHeic2jpgModule(reactContext: ReactApplicationContext?) :
   override fun convertImageAtPath(path: String, promise: Promise) {
     SimpleHeic2jpgModuleImpl.convertImageAtPath(reactApplicationContext, path, promise)
   }
+
+  override fun convertImageAtPathAsBase64(path: String, promise: Promise) {
+    SimpleHeic2jpgModuleImpl.convertImageAtPathAsBase64(reactApplicationContext, path, promise)
+  }
 }
 

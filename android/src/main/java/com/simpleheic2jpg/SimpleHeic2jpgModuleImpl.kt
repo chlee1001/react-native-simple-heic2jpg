@@ -2,6 +2,7 @@ package com.simpleheic2jpg
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.exifinterface.media.ExifInterface
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -94,39 +95,88 @@ object SimpleHeic2jpgModuleImpl {
     return cacheFile.absolutePath
   }
 
+  private fun isHeicOrHeif(fileExtension: String): Boolean {
+    return fileExtension == "heic" || fileExtension == "heif"
+  }
+
+  private fun isSupportedBase64Passthrough(fileExtension: String): Boolean {
+    return fileExtension == "jpg" || fileExtension == "jpeg" || fileExtension == "png"
+  }
+
+  private fun normalizeLocalFilePath(filePath: String): String {
+    return filePath.removePrefix("file://")
+  }
+
+  private fun convertHeicToCache(context: ReactApplicationContext, correctedFilePath: String): String {
+    val options = BitmapFactory.Options()
+    options.inPreferredConfig = Bitmap.Config.ARGB_8888
+    val bitmap = BitmapFactory.decodeFile(correctedFilePath, options)
+    if (bitmap != null) {
+      var cachePath: String? = null
+      try {
+        cachePath = saveBitmapToCache(context, bitmap)
+        val exif = ExifInterface(correctedFilePath)
+        val newExif = ExifInterface(cachePath)
+        for (tagName in EXIF_TAG_LIST) {
+          val attribute = exif.getAttribute(tagName)
+          if (attribute != null) {
+            newExif.setAttribute(tagName, attribute)
+          }
+        }
+        newExif.saveAttributes()
+        return cachePath
+      } catch (ex: Exception) {
+        if (cachePath != null) {
+          File(cachePath).delete()
+        }
+        throw ex
+      } finally {
+        bitmap.recycle()
+      }
+    } else {
+      throw Exception("Failed to convert image. Bitmap is null.")
+    }
+  }
+
+  private fun encodeFileAsBase64(file: File): String {
+    return Base64.encodeToString(file.readBytes(), Base64.NO_WRAP)
+  }
+
   fun convertImageAtPath(context: ReactApplicationContext, filePath: String, promise: Promise) {
     try {
       val fileExtension = getFileExtension(filePath)
 
-      if (fileExtension == "heic" || fileExtension == "heif") {
-        val correctedFilePath = filePath.removePrefix("file://")
-        val options = BitmapFactory.Options()
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888
-        val bitmap = BitmapFactory.decodeFile(correctedFilePath, options)
-        if (bitmap != null) {
-          try {
-            val cachePath = saveBitmapToCache(context, bitmap)
-            val exif = ExifInterface(correctedFilePath)
-            val newExif = ExifInterface(cachePath)
-            for (tagName in EXIF_TAG_LIST) {
-              val attribute = exif.getAttribute(tagName)
-              if (attribute != null) {
-                newExif.setAttribute(tagName, attribute)
-              }
-            }
-            newExif.saveAttributes()
-            promise.resolve(cachePath)
-          } finally {
-            bitmap.recycle()
-          }
-        } else {
-          promise.reject(Exception("Failed to convert image. Bitmap is null."))
-        }
+      if (isHeicOrHeif(fileExtension)) {
+        val correctedFilePath = normalizeLocalFilePath(filePath)
+        promise.resolve(convertHeicToCache(context, correctedFilePath))
       } else {
         promise.resolve(filePath)
       }
     } catch (ex: Exception) {
       promise.reject(ex)
+    }
+  }
+
+  fun convertImageAtPathAsBase64(context: ReactApplicationContext, filePath: String, promise: Promise) {
+    var generatedCachePath: String? = null
+    try {
+      val fileExtension = getFileExtension(filePath)
+      val correctedFilePath = normalizeLocalFilePath(filePath)
+
+      if (isHeicOrHeif(fileExtension)) {
+        generatedCachePath = convertHeicToCache(context, correctedFilePath)
+        promise.resolve(encodeFileAsBase64(File(generatedCachePath)))
+      } else if (isSupportedBase64Passthrough(fileExtension)) {
+        promise.resolve(encodeFileAsBase64(File(correctedFilePath)))
+      } else {
+        promise.reject(Exception("Unsupported image format for base64 conversion."))
+      }
+    } catch (ex: Exception) {
+      promise.reject(ex)
+    } finally {
+      if (generatedCachePath != null) {
+        File(generatedCachePath).delete()
+      }
     }
   }
 

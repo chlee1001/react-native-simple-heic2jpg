@@ -21,6 +21,7 @@ protected:
 
 public:
   virtual jsi::Value convertImageAtPath(jsi::Runtime &rt, jsi::String path) = 0;
+  virtual jsi::Value convertImageAtPathAsBase64(jsi::Runtime &rt, jsi::String path) = 0;
 
 };
 
@@ -54,6 +55,14 @@ private:
 
       return bridging::callFromJs<jsi::Value>(
           rt, &T::convertImageAtPath, jsInvoker_, instance_, std::move(path));
+    }
+    jsi::Value convertImageAtPathAsBase64(jsi::Runtime &rt, jsi::String path) override {
+      static_assert(
+          bridging::getParameterCount(&T::convertImageAtPathAsBase64) == 2,
+          "Expected convertImageAtPathAsBase64(...) to have 2 parameters");
+
+      return bridging::callFromJs<jsi::Value>(
+          rt, &T::convertImageAtPathAsBase64, jsInvoker_, instance_, std::move(path));
     }
 
   private:
