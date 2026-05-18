@@ -5,13 +5,25 @@ const pkg = require('../package.json');
 
 const root = path.resolve(__dirname, '..');
 
+const baseConfig = getDefaultConfig(__dirname);
+
+// RN 0.85 ships resolver.blockList as a RegExp; react-native-monorepo-config
+// (used by bob's metro-config) spreads it as if it were an array. Wrap it so
+// the spread succeeds until upstream fixes the assumption.
+if (
+  baseConfig.resolver?.blockList &&
+  !Array.isArray(baseConfig.resolver.blockList)
+) {
+  baseConfig.resolver.blockList = [baseConfig.resolver.blockList];
+}
+
 /**
  * Metro configuration
- * https://facebook.github.io/metro/docs/configuration
+ * https://reactnative.dev/docs/metro
  *
- * @type {import('metro-config').MetroConfig}
+ * @type {import('@react-native/metro-config').MetroConfig}
  */
-module.exports = getConfig(getDefaultConfig(__dirname), {
+module.exports = getConfig(baseConfig, {
   root,
   pkg,
   project: __dirname,

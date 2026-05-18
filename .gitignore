@@ -35,6 +35,7 @@ project.xcworkspace
 .cxx
 .gradle
 .idea
+.kotlin/
 .project
 .settings
 local.properties
@@ -84,3 +85,6 @@ lib/
 !ios/generated/**
 !android/generated/
 !android/generated/**
+
+.omx
+.omc
