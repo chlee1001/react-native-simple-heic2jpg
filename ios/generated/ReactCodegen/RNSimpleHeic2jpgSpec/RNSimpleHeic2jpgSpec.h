@@ -31,6 +31,8 @@
 #import <vector>
 
 
+NS_ASSUME_NONNULL_BEGIN
+
 @protocol NativeSimpleHeic2jpgSpec <RCTBridgeModule, RCTTurboModule>
 
 - (void)convertImageAtPath:(NSString *)path
@@ -61,4 +63,5 @@ namespace facebook::react {
   };
 } // namespace facebook::react
 
+NS_ASSUME_NONNULL_END
 #endif // RNSimpleHeic2jpgSpec_H

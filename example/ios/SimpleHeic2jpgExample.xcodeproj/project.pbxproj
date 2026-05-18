@@ -9,9 +9,8 @@
 /* Begin PBXBuildFile section */
 		00E356F31AD99517003FC87E /* SimpleHeic2jpgExampleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* SimpleHeic2jpgExampleTests.m */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		4ABAB8545089FFAD32E509AE /* libPods-SimpleHeic2jpgExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AB5197B2DCE15B94CE127E46 /* libPods-SimpleHeic2jpgExample.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
-		6269B5C8A62C1B2BC08BBBFC /* libPods-SimpleHeic2jpgExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C6C93CF224662F16F3FCACE /* libPods-SimpleHeic2jpgExample.a */; };
-		7C54E4F8A2958EAB558EFA3E /* libPods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A0B53D3322318BD37AE1752 /* libPods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		A078789EA7B24C7F108BA293 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 85748E90E2854480F743D8D2 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
@@ -34,15 +33,12 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SimpleHeic2jpgExample/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = SimpleHeic2jpgExample/Info.plist; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SimpleHeic2jpgExample/AppDelegate.swift; sourceTree = "<group>"; };
-		1B74C6CE96EA7E3779952906 /* Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.release.xcconfig"; path = "Target Support Files/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.release.xcconfig"; sourceTree = "<group>"; };
-		2A3D2571A096AE1B11FFB526 /* Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.debug.xcconfig"; path = "Target Support Files/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.debug.xcconfig"; sourceTree = "<group>"; };
-		4A0B53D3322318BD37AE1752 /* libPods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = SimpleHeic2jpgExample/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		85748E90E2854480F743D8D2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = SimpleHeic2jpgExample/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		8C6C93CF224662F16F3FCACE /* libPods-SimpleHeic2jpgExample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SimpleHeic2jpgExample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		AC7FDDE54525E9588490151C /* Pods-SimpleHeic2jpgExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SimpleHeic2jpgExample.release.xcconfig"; path = "Target Support Files/Pods-SimpleHeic2jpgExample/Pods-SimpleHeic2jpgExample.release.xcconfig"; sourceTree = "<group>"; };
+		9C08C39EC4837D16111CE818 /* Pods-SimpleHeic2jpgExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SimpleHeic2jpgExample.release.xcconfig"; path = "Target Support Files/Pods-SimpleHeic2jpgExample/Pods-SimpleHeic2jpgExample.release.xcconfig"; sourceTree = "<group>"; };
+		AB5197B2DCE15B94CE127E46 /* libPods-SimpleHeic2jpgExample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SimpleHeic2jpgExample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		FAEA9ED14A067B9C29871525 /* Pods-SimpleHeic2jpgExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SimpleHeic2jpgExample.debug.xcconfig"; path = "Target Support Files/Pods-SimpleHeic2jpgExample/Pods-SimpleHeic2jpgExample.debug.xcconfig"; sourceTree = "<group>"; };
+		FD4A37B36FCA58659A53B4B7 /* Pods-SimpleHeic2jpgExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SimpleHeic2jpgExample.debug.xcconfig"; path = "Target Support Files/Pods-SimpleHeic2jpgExample/Pods-SimpleHeic2jpgExample.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,7 +46,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7C54E4F8A2958EAB558EFA3E /* libPods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -58,7 +53,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6269B5C8A62C1B2BC08BBBFC /* libPods-SimpleHeic2jpgExample.a in Frameworks */,
+				4ABAB8545089FFAD32E509AE /* libPods-SimpleHeic2jpgExample.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,8 +93,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				8C6C93CF224662F16F3FCACE /* libPods-SimpleHeic2jpgExample.a */,
-				4A0B53D3322318BD37AE1752 /* libPods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.a */,
+				AB5197B2DCE15B94CE127E46 /* libPods-SimpleHeic2jpgExample.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -138,10 +132,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				FAEA9ED14A067B9C29871525 /* Pods-SimpleHeic2jpgExample.debug.xcconfig */,
-				AC7FDDE54525E9588490151C /* Pods-SimpleHeic2jpgExample.release.xcconfig */,
-				2A3D2571A096AE1B11FFB526 /* Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.debug.xcconfig */,
-				1B74C6CE96EA7E3779952906 /* Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.release.xcconfig */,
+				FD4A37B36FCA58659A53B4B7 /* Pods-SimpleHeic2jpgExample.debug.xcconfig */,
+				9C08C39EC4837D16111CE818 /* Pods-SimpleHeic2jpgExample.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -153,12 +145,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "SimpleHeic2jpgExampleTests" */;
 			buildPhases = (
-				1B5A38C4AC1764C1A461975D /* [CP] Check Pods Manifest.lock */,
 				00E356EA1AD99517003FC87E /* Sources */,
 				00E356EB1AD99517003FC87E /* Frameworks */,
 				00E356EC1AD99517003FC87E /* Resources */,
-				CF0C65A8117646CD5683B5AE /* [CP] Embed Pods Frameworks */,
-				F4993C62393134F73E7F61F5 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -174,14 +163,14 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "SimpleHeic2jpgExample" */;
 			buildPhases = (
-				3796AD4B218288B78878DECD /* [CP] Check Pods Manifest.lock */,
+				44491408A016D185D04BCE58 /* [CP] Check Pods Manifest.lock */,
 				FD10A7F022414F080027D42C /* Start Packager */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				0247CCE93FA0EC7E3571DBF4 /* [CP] Embed Pods Frameworks */,
-				D66C2AA149925CAE9ABE6565 /* [CP] Copy Pods Resources */,
+				6FEDAC5244026B17021046A1 /* [CP] Embed Pods Frameworks */,
+				78856533E85522DC76F8E68D /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -265,46 +254,7 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"../node_modules/react-native/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"../node_modules/react-native/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"\\\"$WITH_ENVIRONMENT\\\" \\\"$REACT_NATIVE_XCODE\\\"\"\n";
 		};
-		0247CCE93FA0EC7E3571DBF4 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample/Pods-SimpleHeic2jpgExample-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample/Pods-SimpleHeic2jpgExample-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample/Pods-SimpleHeic2jpgExample-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		1B5A38C4AC1764C1A461975D /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		3796AD4B218288B78878DECD /* [CP] Check Pods Manifest.lock */ = {
+		44491408A016D185D04BCE58 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -326,24 +276,24 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		CF0C65A8117646CD5683B5AE /* [CP] Embed Pods Frameworks */ = {
+		6FEDAC5244026B17021046A1 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample/Pods-SimpleHeic2jpgExample-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample/Pods-SimpleHeic2jpgExample-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample/Pods-SimpleHeic2jpgExample-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		D66C2AA149925CAE9ABE6565 /* [CP] Copy Pods Resources */ = {
+		78856533E85522DC76F8E68D /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -358,23 +308,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample/Pods-SimpleHeic2jpgExample-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		F4993C62393134F73E7F61F5 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests/Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		FD10A7F022414F080027D42C /* Start Packager */ = {
@@ -428,7 +361,6 @@
 /* Begin XCBuildConfiguration section */
 		00E356F61AD99517003FC87E /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2A3D2571A096AE1B11FFB526 /* Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -455,7 +387,6 @@
 		};
 		00E356F71AD99517003FC87E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1B74C6CE96EA7E3779952906 /* Pods-SimpleHeic2jpgExample-SimpleHeic2jpgExampleTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
@@ -479,7 +410,7 @@
 		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = FAEA9ED14A067B9C29871525 /* Pods-SimpleHeic2jpgExample.debug.xcconfig */;
+			baseConfigurationReference = FD4A37B36FCA58659A53B4B7 /* Pods-SimpleHeic2jpgExample.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -508,7 +439,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AC7FDDE54525E9588490151C /* Pods-SimpleHeic2jpgExample.release.xcconfig */;
+			baseConfigurationReference = 9C08C39EC4837D16111CE818 /* Pods-SimpleHeic2jpgExample.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -598,17 +529,22 @@
 				);
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_CFLAGS = "$(inherited)";
+				OTHER_CFLAGS = (
+					"$(inherited)",
+					"-DRCT_REMOVE_LEGACY_ARCH=1",
+				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-DFOLLY_NO_CONFIG",
 					"-DFOLLY_MOBILE=1",
 					"-DFOLLY_USE_LIBCPP=1",
+					"-DRCT_REMOVE_LEGACY_ARCH=1",
 				);
 				OTHER_LDFLAGS = "$(inherited)";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;
 			};
 			name = Debug;
@@ -670,16 +606,21 @@
 					"\"$(inherited)\"",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_CFLAGS = "$(inherited)";
+				OTHER_CFLAGS = (
+					"$(inherited)",
+					"-DRCT_REMOVE_LEGACY_ARCH=1",
+				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-DFOLLY_NO_CONFIG",
 					"-DFOLLY_MOBILE=1",
 					"-DFOLLY_USE_LIBCPP=1",
+					"-DRCT_REMOVE_LEGACY_ARCH=1",
 				);
 				OTHER_LDFLAGS = "$(inherited)";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;
 				VALIDATE_PRODUCT = YES;
 			};

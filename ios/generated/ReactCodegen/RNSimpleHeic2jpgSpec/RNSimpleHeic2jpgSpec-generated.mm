@@ -25,7 +25,7 @@
 
 
 namespace facebook::react {
-
+  
     static facebook::jsi::Value __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPath(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
       return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "convertImageAtPath", @selector(convertImageAtPath:resolve:reject:), args, count);
     }
@@ -36,11 +36,11 @@ namespace facebook::react {
 
   NativeSimpleHeic2jpgSpecJSI::NativeSimpleHeic2jpgSpecJSI(const ObjCTurboModule::InitParams &params)
     : ObjCTurboModule(params) {
-
+      
         methodMap_["convertImageAtPath"] = MethodMetadata {1, __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPath};
-
-
+        
+        
         methodMap_["convertImageAtPathAsBase64"] = MethodMetadata {1, __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPathAsBase64};
-
+        
   }
 } // namespace facebook::react
