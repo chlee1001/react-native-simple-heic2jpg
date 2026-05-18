@@ -1,12 +1,13 @@
 # react-native-simple-heic2jpg
 
-React Native Component for converts HEIC files on Android and iOS
+React Native native module for converting local HEIC/HEIF images to JPEG on Android and iOS.
 
 ## Installation
 
 ```sh
 npm install react-native-simple-heic2jpg
 
+# or
 yarn add react-native-simple-heic2jpg
 
 # For iOS
@@ -14,36 +15,46 @@ cd ios && pod install
 ```
 
 ## Features
-- [x] Image Format Conversion:
-  - Converts images in HEIC or HEIF format to JPEG while maintaining the original quality.
-    Supports retaining the original format for JPEG and PNG images without conversion.
 
+- **Image format conversion**
+  - Converts local HEIC/HEIF images to JPEG.
+  - JPEG and PNG inputs are passed through without conversion.
 
-- [x] EXIF Metadata Preservation:
-  - Retains the essential metadata (like GPS data, camera specifications, datetime, etc.) from the original image to the converted image.
+- **EXIF metadata preservation**
+  - Copies supported metadata such as GPS, camera, orientation, and date fields from the source image to the converted JPEG.
+  - Exact metadata preservation depends on platform image/EXIF support.
 
+- **iOS and Android support**
+  - iOS implementation: Objective-C++ using ImageIO/CoreImage.
+  - Android implementation: Kotlin using `BitmapFactory` and AndroidX ExifInterface.
+  - Supports React Native old architecture and TurboModule/new architecture wiring.
 
-- [x] iOS and Android Support:
-  - Separate modules for iOS (Swift) and Android (Java) platforms, ensuring seamless integration and functionality in a React Native environment.
-
-
-- [x] Ease of Integration:
-  - Simple and straightforward API, allowing for easy integration into existing React Native projects.
+- **Simple JavaScript API**
+  - One exported helper: `convertImage(imagePath)`.
 
 ## Usage
 
 ```js
 import { convertImage } from 'react-native-simple-heic2jpg';
 
-// ...
-
-// path is the path of the image to be converted
-// path is the "Path to your .HEIC file"
-const result = await convertImage(path)
-// result is the "Path to your .JPG file"
+const result = await convertImage(path);
 ```
 
+### Input path contract
 
+`convertImage` accepts local image files as either:
+
+- raw local file paths, for example `/var/mobile/.../IMG_0001.HEIC` or `/storage/emulated/0/.../IMG_0001.HEIC`
+- local `file://` URIs, for example `file:///var/mobile/.../IMG_0001.HEIC`
+
+`content://` URIs are not supported by this release. Resolve them to a local file path before calling `convertImage`.
+
+### Return value
+
+The JavaScript API always resolves to a `file://` URI string.
+
+- HEIC/HEIF input: returns the converted JPEG file URI.
+- JPEG/PNG input: returns the original file URI.
 
 ## License
 

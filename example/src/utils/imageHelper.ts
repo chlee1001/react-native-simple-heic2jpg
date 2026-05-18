@@ -24,7 +24,7 @@ export const getImageExif = async ({
       return ExifReader.load(fileBuffer, { expanded: true });
     }
     return null;
-  } catch (e) {
-    console.log('getImageExif Error: ', e);
+  } catch {
+    return null;
   }
 };

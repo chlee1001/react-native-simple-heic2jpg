@@ -1,6 +1,5 @@
 package com.simpleheic2jpg
 
-import android.util.Log
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -16,7 +15,6 @@ class SimpleHeic2jpgModule(reactContext: ReactApplicationContext?) :
 
   @ReactMethod
   fun convertImageAtPath(path: String, promise: Promise) {
-    Log.i("SimpleHeic2jpgModule", "convertImageAtPath ${path}")
     SimpleHeic2jpgModuleImpl.convertImageAtPath(reactApplicationContext, path, promise)
   }
 }
