@@ -15,25 +15,28 @@
   "dependencies": {
     "base64-arraybuffer": "^1.0.2",
     "exifreader": "^4.25.0",
-    "react": "18.3.1",
-    "react-native": "0.76.5",
+    "react": "19.2.3",
+    "react-native": "0.85.3",
     "react-native-fs": "^2.20.0",
     "react-native-image-picker": "^8.2.1",
-    "react-native-permissions": "^5.2.1"
+    "react-native-permissions": "^5.2.1",
+    "react-native-safe-area-context": "^5.5.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@babel/preset-env": "^7.25.3",
     "@babel/runtime": "^7.25.0",
-    "@react-native-community/cli": "15.0.1",
-    "@react-native-community/cli-platform-android": "15.0.1",
-    "@react-native-community/cli-platform-ios": "15.0.1",
-    "@react-native/babel-preset": "0.76.5",
-    "@react-native/metro-config": "0.76.5",
-    "@react-native/typescript-config": "0.76.5",
-    "react-native-builder-bob": "^0.32.0"
+    "@react-native-community/cli": "20.1.0",
+    "@react-native-community/cli-platform-android": "20.1.0",
+    "@react-native-community/cli-platform-ios": "20.1.0",
+    "@react-native/babel-preset": "0.85.3",
+    "@react-native/jest-preset": "0.85.3",
+    "@react-native/metro-config": "0.85.3",
+    "@react-native/typescript-config": "0.85.3",
+    "@types/jest": "^29.5.13",
+    "react-native-builder-bob": "^0.40.5"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22.11.0"
   }
 }
