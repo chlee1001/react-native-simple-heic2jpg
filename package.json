@@ -31,6 +31,9 @@
     "!android/gradlew",
     "!android/gradlew.bat",
     "!android/local.properties",
+    "!android/src/test",
+    "!android/src/androidTest",
+    "!ios/Tests",
     "!**/__tests__",
     "!**/__fixtures__",
     "!**/__mocks__",
@@ -153,7 +156,8 @@
   },
   "eslintIgnore": [
     "node_modules/",
-    "lib/"
+    "lib/",
+    "android/build/"
   ],
   "prettier": {
     "quoteProps": "consistent",
