@@ -1,14 +1,35 @@
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry, NativeModules } from 'react-native';
 
+// Native conversion options. A named, non-optional struct: codegen maps trailing
+// optional method args poorly under JSI's fixed arity, so the native boundary takes
+// a fully-populated object. The public API (src/index.tsx) keeps these optional and
+// fills defaults before crossing into native.
+export type ConvertNativeOptions = {
+  stripExif: boolean;
+  stripGps: boolean;
+};
+
 export interface Spec extends TurboModule {
-  convertImageAtPath(path: string): Promise<string>;
-  convertImageAtPathAsBase64(path: string): Promise<string>;
+  convertImageAtPath(
+    path: string,
+    options: ConvertNativeOptions
+  ): Promise<string>;
+  convertImageAtPathAsBase64(
+    path: string,
+    options: ConvertNativeOptions
+  ): Promise<string>;
 }
 
 export interface ImageConverterInterface {
-  convertImageAtPath(path: string): Promise<string>;
-  convertImageAtPathAsBase64(path: string): Promise<string>;
+  convertImageAtPath(
+    path: string,
+    options: ConvertNativeOptions
+  ): Promise<string>;
+  convertImageAtPathAsBase64(
+    path: string,
+    options: ConvertNativeOptions
+  ): Promise<string>;
 }
 
 // TurboModuleRegistry로 TurboModule 가져오기 (New Architecture)

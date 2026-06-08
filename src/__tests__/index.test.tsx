@@ -31,7 +31,10 @@ describe('convertImage', () => {
     await expect(convertImage('/tmp/input.heic')).resolves.toBe(
       'file:///tmp/output.jpeg'
     );
-    expect(mockConvertImageAtPath).toHaveBeenCalledWith('/tmp/input.heic');
+    expect(mockConvertImageAtPath).toHaveBeenCalledWith('/tmp/input.heic', {
+      stripExif: false,
+      stripGps: false,
+    });
     expect(mockConvertImageAtPathAsBase64).not.toHaveBeenCalled();
   });
 
@@ -50,9 +53,20 @@ describe('convertImage', () => {
       convertImage('/tmp/input.heic', { returnBase64: true })
     ).resolves.toBe('abc123+/=');
     expect(mockConvertImageAtPathAsBase64).toHaveBeenCalledWith(
-      '/tmp/input.heic'
+      '/tmp/input.heic',
+      { stripExif: false, stripGps: false }
     );
     expect(mockConvertImageAtPath).not.toHaveBeenCalled();
+  });
+
+  it('forwards stripExif and stripGps to native, defaulting unset flags to false', async () => {
+    mockConvertImageAtPath?.mockResolvedValue('file:///tmp/output.jpeg');
+
+    await convertImage('/tmp/input.heic', { stripGps: true });
+    expect(mockConvertImageAtPath).toHaveBeenCalledWith('/tmp/input.heic', {
+      stripExif: false,
+      stripGps: true,
+    });
   });
 
   it('does not add a data URI prefix to base64 results', async () => {

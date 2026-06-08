@@ -6,6 +6,7 @@ import android.os.Build
 import android.util.Base64
 import androidx.exifinterface.media.ExifInterface
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReactApplicationContext
 import java.io.File
 import java.io.FileOutputStream
@@ -21,6 +22,7 @@ object SimpleHeic2jpgModuleImpl {
   // existing reject behavior for unrelated paths is unchanged.
   private const val ERROR_HEIF_UNSUPPORTED_OS = "E_HEIF_UNSUPPORTED_OS"
   private const val ERROR_HEIF_DECODE_FAILED = "E_HEIF_DECODE_FAILED"
+  private const val ERROR_UNSUPPORTED_URI = "E_UNSUPPORTED_URI"
 
   // EXIF tags copied from the source HEIC onto the converted JPEG. Only string/short/
   // rational ("safe") types are listed: ExifInterface serializes/deserializes these
@@ -32,7 +34,9 @@ object SimpleHeic2jpgModuleImpl {
   // the actual encoded pixels. Note ExifInterface 1.3.7 inserts a default value of 0 for
   // these tags when absent, so the output may carry 0 (or encoder-written dimensions) —
   // the contract here is "do not copy the source's stale dimensions", not "tag absent".
-  private val EXIF_TAG_LIST = listOf(
+  // internal (not private) so the unit test can assert membership — specifically that
+  // TAG_IMAGE_WIDTH/LENGTH stay excluded (see the structural test in CopyExifTest).
+  internal val EXIF_TAG_LIST = listOf(
     ExifInterface.TAG_DATETIME,
     ExifInterface.TAG_FLASH,
     ExifInterface.TAG_GPS_ALTITUDE,
@@ -143,6 +147,16 @@ object SimpleHeic2jpgModuleImpl {
   }
 
   private fun normalizeLocalFilePath(filePath: String): String {
+    // content:// resolves through a ContentResolver, not the filesystem; ExifInterface and
+    // BitmapFactory.decodeFile both expect a real path, so reject it with an actionable
+    // code instead of letting it fail later as an opaque decode error. iOS already rejects
+    // non-file schemes (with its existing "Unsupported URI" code) before format handling.
+    if (filePath.startsWith("content://")) {
+      throw ConversionException(
+        ERROR_UNSUPPORTED_URI,
+        "content:// URIs are not supported. Resolve to a local file path before calling convertImage."
+      )
+    }
     return filePath.removePrefix("file://")
   }
 
@@ -154,7 +168,16 @@ object SimpleHeic2jpgModuleImpl {
   // (orientation must survive because BitmapFactory does not rotate pixels — the tag
   // is the only thing keeping the image upright). P0 callers pass false/false; the
   // strip branches are wired up here so P1 only has to thread the options through.
-  private fun copyExif(
+  //
+  // Orientation policy: tag preserved, pixels NOT rotated. BitmapFactory.decodeFile
+  // returns raw, unrotated pixels, so copying TAG_ORIENTATION leaves the consumer to
+  // apply the rotation. This matches iOS (CIImage pixels stay unrotated, the property
+  // is copied). Warning: if this decode is ever swapped to ImageDecoder — which DOES
+  // bake orientation into the pixels — copying TAG_ORIENTATION would double-rotate;
+  // drop the tag in that case.
+  // internal (not private) so the JVM unit test in the same module can exercise the
+  // whitelist/strip logic directly, without going through the HEIF decode path.
+  internal fun copyExif(
     srcPath: String,
     dstPath: String,
     stripExif: Boolean = false,
@@ -177,7 +200,17 @@ object SimpleHeic2jpgModuleImpl {
     destination.saveAttributes()
   }
 
-  private fun convertHeicToCache(context: ReactApplicationContext, correctedFilePath: String): String {
+  // Reads a boolean option defensively: the JS wrapper always sends a fully-populated
+  // object, but a direct native caller might omit a key.
+  private fun ReadableMap?.optionFlag(key: String): Boolean =
+    this != null && this.hasKey(key) && !this.isNull(key) && this.getBoolean(key)
+
+  private fun convertHeicToCache(
+    context: ReactApplicationContext,
+    correctedFilePath: String,
+    stripExif: Boolean,
+    stripGps: Boolean
+  ): String {
     // HEIF decoding via BitmapFactory is only available on Android P (API 28)+. On older
     // devices decodeFile returns null with no codec; guard explicitly so the caller gets
     // an actionable error instead of an ambiguous "Bitmap is null".
@@ -200,7 +233,7 @@ object SimpleHeic2jpgModuleImpl {
     var cachePath: String? = null
     try {
       cachePath = saveBitmapToCache(context, bitmap)
-      copyExif(correctedFilePath, cachePath)
+      copyExif(correctedFilePath, cachePath, stripExif, stripGps)
       return cachePath
     } catch (ex: Exception) {
       if (cachePath != null) {
@@ -224,14 +257,29 @@ object SimpleHeic2jpgModuleImpl {
     }
   }
 
-  fun convertImageAtPath(context: ReactApplicationContext, filePath: String, promise: Promise) {
+  fun convertImageAtPath(
+    context: ReactApplicationContext,
+    filePath: String,
+    options: ReadableMap?,
+    promise: Promise
+  ) {
     try {
+      // Normalize first so content:// is rejected for every format, mirroring iOS which
+      // rejects non-file schemes before format detection.
+      val correctedFilePath = normalizeLocalFilePath(filePath)
       val fileExtension = getFileExtension(filePath)
 
       if (isHeicOrHeif(fileExtension)) {
-        val correctedFilePath = normalizeLocalFilePath(filePath)
-        promise.resolve(convertHeicToCache(context, correctedFilePath))
+        promise.resolve(
+          convertHeicToCache(
+            context,
+            correctedFilePath,
+            options.optionFlag("stripExif"),
+            options.optionFlag("stripGps")
+          )
+        )
       } else {
+        // JPEG/PNG inputs pass through unmodified, so strip options do not apply here.
         promise.resolve(filePath)
       }
     } catch (ex: Exception) {
@@ -239,14 +287,25 @@ object SimpleHeic2jpgModuleImpl {
     }
   }
 
-  fun convertImageAtPathAsBase64(context: ReactApplicationContext, filePath: String, promise: Promise) {
+  fun convertImageAtPathAsBase64(
+    context: ReactApplicationContext,
+    filePath: String,
+    options: ReadableMap?,
+    promise: Promise
+  ) {
     var generatedCachePath: String? = null
     try {
-      val fileExtension = getFileExtension(filePath)
+      // Normalize first (rejects content:// before format handling), mirroring convertImageAtPath.
       val correctedFilePath = normalizeLocalFilePath(filePath)
+      val fileExtension = getFileExtension(filePath)
 
       if (isHeicOrHeif(fileExtension)) {
-        generatedCachePath = convertHeicToCache(context, correctedFilePath)
+        generatedCachePath = convertHeicToCache(
+          context,
+          correctedFilePath,
+          options.optionFlag("stripExif"),
+          options.optionFlag("stripGps")
+        )
         promise.resolve(encodeFileAsBase64(File(generatedCachePath)))
       } else if (isSupportedBase64Passthrough(fileExtension)) {
         promise.resolve(encodeFileAsBase64(File(correctedFilePath)))

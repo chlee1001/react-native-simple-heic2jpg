@@ -11,15 +11,25 @@ RCT_EXPORT_MODULE(SimpleHeic2jpg)
 #ifdef RCT_NEW_ARCH_ENABLED
 // TurboModule 메서드 구현
 - (void)convertImageAtPath:(NSString *)path
-resolve:(RCTPromiseResolveBlock)resolve
-reject:(RCTPromiseRejectBlock)reject {
-  [self convertImageAtPathImplementation:path resolve:resolve reject:reject];
+                   options:(JS::NativeSimpleHeic2jpg::ConvertNativeOptions &)options
+                   resolve:(RCTPromiseResolveBlock)resolve
+                    reject:(RCTPromiseRejectBlock)reject {
+  [self convertImageAtPathImplementation:path
+                               stripExif:options.stripExif()
+                                stripGps:options.stripGps()
+                                 resolve:resolve
+                                  reject:reject];
 }
 
 - (void)convertImageAtPathAsBase64:(NSString *)path
-resolve:(RCTPromiseResolveBlock)resolve
-reject:(RCTPromiseRejectBlock)reject {
-  [self convertImageAtPathAsBase64Implementation:path resolve:resolve reject:reject];
+                           options:(JS::NativeSimpleHeic2jpg::ConvertNativeOptions &)options
+                           resolve:(RCTPromiseResolveBlock)resolve
+                            reject:(RCTPromiseRejectBlock)reject {
+  [self convertImageAtPathAsBase64Implementation:path
+                                       stripExif:options.stripExif()
+                                        stripGps:options.stripGps()
+                                         resolve:resolve
+                                          reject:reject];
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
@@ -29,20 +39,32 @@ reject:(RCTPromiseRejectBlock)reject {
 #else
 // Old Architecture 메서드
 RCT_EXPORT_METHOD(convertImageAtPath:(NSString *)path
+                  options:(NSDictionary *)options
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
-  [self convertImageAtPathImplementation:path resolve:resolve reject:reject];
+  [self convertImageAtPathImplementation:path
+                               stripExif:[options[@"stripExif"] boolValue]
+                                stripGps:[options[@"stripGps"] boolValue]
+                                 resolve:resolve
+                                  reject:reject];
 }
 
 RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
+                  options:(NSDictionary *)options
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
-  [self convertImageAtPathAsBase64Implementation:path resolve:resolve reject:reject];
+  [self convertImageAtPathAsBase64Implementation:path
+                                       stripExif:[options[@"stripExif"] boolValue]
+                                        stripGps:[options[@"stripGps"] boolValue]
+                                         resolve:resolve
+                                          reject:reject];
 }
 #endif
 
 // 공통 구현 (Old/New Architecture에서 호출)
 - (void)convertImageAtPathImplementation:(NSString *)path
+                               stripExif:(BOOL)stripExif
+                                stripGps:(BOOL)stripGps
                                  resolve:(RCTPromiseResolveBlock)resolve
                                   reject:(RCTPromiseRejectBlock)reject {
   CGImageSourceRef imageSource = NULL;
@@ -104,6 +126,8 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
       [self createImageDestination:jpegData
                        imageSource:imageSource
                     destinationURL:destinationURL
+                         stripExif:stripExif
+                          stripGps:stripGps
                            resolve:resolve
                             reject:reject];
     } else if (CFStringCompare(imageType, CFSTR("public.jpeg"), 0) == kCFCompareEqualTo ||
@@ -122,6 +146,8 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
 }
 
 - (void)convertImageAtPathAsBase64Implementation:(NSString *)path
+                                       stripExif:(BOOL)stripExif
+                                        stripGps:(BOOL)stripGps
                                         resolve:(RCTPromiseResolveBlock)resolve
                                          reject:(RCTPromiseRejectBlock)reject {
   CGImageSourceRef imageSource = NULL;
@@ -184,6 +210,8 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
       if (![self writeFinalizedJPEGData:jpegData
                             imageSource:imageSource
                          destinationURL:destinationURL
+                              stripExif:stripExif
+                               stripGps:stripGps
                                   reject:reject]) {
         return;
       }
@@ -275,10 +303,13 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
 - (BOOL)writeFinalizedJPEGData:(NSData *)imageData
                    imageSource:(CGImageSourceRef)imageSource
                 destinationURL:(NSURL *)destinationURL
+                     stripExif:(BOOL)stripExif
+                      stripGps:(BOOL)stripGps
                         reject:(RCTPromiseRejectBlock)reject {
   CGImageSourceRef source = NULL;
   CGImageDestinationRef destination = NULL;
   CFDictionaryRef imageProperties = NULL;
+  CFMutableDictionaryRef strippedProperties = NULL;
 
   @try {
     CFDictionaryRef options = (__bridge CFDictionaryRef) @{(id)kCGImageSourceShouldCache : @NO};
@@ -295,7 +326,27 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
     }
 
     imageProperties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, NULL);
-    CGImageDestinationAddImageFromSource(destination, source, 0, imageProperties);
+
+    // Strip operates by removing whole top-level property dictionaries. Orientation
+    // lives in the TIFF dict (kCGImagePropertyTIFFOrientation) and the top-level
+    // kCGImagePropertyOrientation, neither of which is removed here, so it survives
+    // both strip modes — matching the Android "tag preserved, pixels not rotated"
+    // policy. Only HEIC→JPEG conversions reach this writer; JPEG/PNG pass-throughs
+    // are returned untouched, so strip does not apply to them (documented asymmetry).
+    CFDictionaryRef propertiesToWrite = imageProperties;
+    if ((stripExif || stripGps) && imageProperties) {
+      strippedProperties = CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, imageProperties);
+      if (strippedProperties) {
+        // Either flag removes GPS; stripExif additionally removes the EXIF block.
+        // Orientation is untouched (it lives in the TIFF/top-level dicts).
+        CFDictionaryRemoveValue(strippedProperties, kCGImagePropertyGPSDictionary);
+        if (stripExif) {
+          CFDictionaryRemoveValue(strippedProperties, kCGImagePropertyExifDictionary);
+        }
+        propertiesToWrite = strippedProperties;
+      }
+    }
+    CGImageDestinationAddImageFromSource(destination, source, 0, propertiesToWrite);
 
     if (!CGImageDestinationFinalize(destination)) {
       reject(@"Error Writing Image", @"Failed to finalize image destination", nil);
@@ -307,6 +358,9 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
     reject(@"Error Writing Image", exception.reason, nil);
     return NO;
   } @finally {
+    if (strippedProperties) {
+      CFRelease(strippedProperties);
+    }
     if (imageProperties) {
       CFRelease(imageProperties);
     }
@@ -322,11 +376,15 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
 - (void)createImageDestination:(NSData *)imageData
                    imageSource:(CGImageSourceRef)imageSource
                 destinationURL:(NSURL *)destinationURL
+                     stripExif:(BOOL)stripExif
+                      stripGps:(BOOL)stripGps
                        resolve:(RCTPromiseResolveBlock)resolve
                         reject:(RCTPromiseRejectBlock)reject {
   if ([self writeFinalizedJPEGData:imageData
                        imageSource:imageSource
                     destinationURL:destinationURL
+                         stripExif:stripExif
+                          stripGps:stripGps
                              reject:reject]) {
     resolve(destinationURL.path);
   }
