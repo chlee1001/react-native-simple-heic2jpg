@@ -1,7 +1,7 @@
 // @ts-ignore
 import ExifReader from '../../node_modules/exifreader/src/exif-reader.js';
 import { decode } from 'base64-arraybuffer';
-import RNFS from 'react-native-fs';
+import * as RNFS from '@dr.pogodin/react-native-fs';
 
 export const getImageExif = async ({
   imagePath,
