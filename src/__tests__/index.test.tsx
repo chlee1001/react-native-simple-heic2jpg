@@ -69,6 +69,47 @@ describe('convertImage', () => {
     });
   });
 
+  it('flattens the gps option into native gpsLatitude/gpsLongitude (URI mode)', async () => {
+    mockConvertImageAtPath?.mockResolvedValue('file:///tmp/output.jpeg');
+
+    await convertImage('/tmp/input.heic', {
+      gps: { latitude: 35.1796, longitude: 129.0756 },
+    });
+    expect(mockConvertImageAtPath).toHaveBeenCalledWith('/tmp/input.heic', {
+      stripExif: false,
+      stripGps: false,
+      gpsLatitude: 35.1796,
+      gpsLongitude: 129.0756,
+    });
+  });
+
+  it('flattens the gps option for the base64 method too', async () => {
+    mockConvertImageAtPathAsBase64?.mockResolvedValue('abc123+/=');
+
+    await convertImage('/tmp/input.heic', {
+      returnBase64: true,
+      gps: { latitude: -33.8688, longitude: 151.2093 },
+    });
+    expect(mockConvertImageAtPathAsBase64).toHaveBeenCalledWith(
+      '/tmp/input.heic',
+      {
+        stripExif: false,
+        stripGps: false,
+        gpsLatitude: -33.8688,
+        gpsLongitude: 151.2093,
+      }
+    );
+  });
+
+  it('omits gps fields entirely when the gps option is not provided', async () => {
+    mockConvertImageAtPath?.mockResolvedValue('file:///tmp/output.jpeg');
+
+    await convertImage('/tmp/input.heic', { stripExif: true });
+    const passedOptions = mockConvertImageAtPath?.mock.calls[0]?.[1];
+    expect(passedOptions).not.toHaveProperty('gpsLatitude');
+    expect(passedOptions).not.toHaveProperty('gpsLongitude');
+  });
+
   it('does not add a data URI prefix to base64 results', async () => {
     mockConvertImageAtPathAsBase64?.mockResolvedValue('/9j/4AAQSkZJRgABAQ==');
 

@@ -122,12 +122,14 @@ This behavior is identical on iOS and Android.
 By default, the JavaScript API resolves to a `file://` URI string.
 
 - HEIC/HEIF input: returns the converted JPEG file URI.
-- JPEG/PNG input: returns the original file URI.
+- JPEG input: returns the original file URI — unless `gps` is provided, in which case it returns a new injected-copy URI (the original is left untouched).
+- PNG input: returns the original file URI (`gps` is ignored).
 
 When `returnBase64` is `true`, the JavaScript API resolves to a raw base64 string.
 
 - HEIC/HEIF input: returns the converted JPEG bytes as base64.
-- JPEG/JPG/PNG input: returns the original file bytes as base64.
+- JPEG/JPG input: returns the original file bytes as base64 — unless `gps` is provided, in which case it returns the injected copy's bytes.
+- PNG input: returns the original file bytes as base64 (`gps` is ignored).
 - The returned string does not include a `file://` prefix.
 - The returned string does not include a `data:image/...;base64,` prefix. Add one in your app if your target component requires a data URI.
 - HEIC/HEIF base64 mode may use temporary/cache files internally so the returned base64 comes from finalized JPEG bytes with preserved metadata. Generated temporary/cache files are cleaned after encoding.
