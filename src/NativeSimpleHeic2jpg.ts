@@ -8,6 +8,11 @@ import { TurboModuleRegistry, NativeModules } from 'react-native';
 export type ConvertNativeOptions = {
   stripExif: boolean;
   stripGps: boolean;
+  // Optional GPS injection: when both are present, the converted JPEG's GPS
+  // EXIF is written from these values (overriding stripGps for the GPS block).
+  // Optional (not defaulted) because absence — not a sentinel — means "do not inject".
+  gpsLatitude?: number;
+  gpsLongitude?: number;
 };
 
 export interface Spec extends TurboModule {

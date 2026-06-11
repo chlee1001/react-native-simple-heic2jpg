@@ -37,6 +37,8 @@ namespace JS {
     struct ConvertNativeOptions {
       bool stripExif() const;
       bool stripGps() const;
+      std::optional<double> gpsLatitude() const;
+      std::optional<double> gpsLongitude() const;
 
       ConvertNativeOptions(NSDictionary *const v) : _v(v) {}
     private:
@@ -88,6 +90,16 @@ inline bool JS::NativeSimpleHeic2jpg::ConvertNativeOptions::stripGps() const
 {
   id const p = _v[@"stripGps"];
   return RCTBridgingToBool(p);
+}
+inline std::optional<double> JS::NativeSimpleHeic2jpg::ConvertNativeOptions::gpsLatitude() const
+{
+  id const p = _v[@"gpsLatitude"];
+  return RCTBridgingToOptionalDouble(p);
+}
+inline std::optional<double> JS::NativeSimpleHeic2jpg::ConvertNativeOptions::gpsLongitude() const
+{
+  id const p = _v[@"gpsLongitude"];
+  return RCTBridgingToOptionalDouble(p);
 }
 NS_ASSUME_NONNULL_END
 #endif // RNSimpleHeic2jpgSpec_H

@@ -5,6 +5,15 @@ export type ConvertImageOptions = {
   returnBase64?: boolean;
   stripExif?: boolean;
   stripGps?: boolean;
+  /**
+   * Write these GPS coordinates into the output, replacing whatever the source
+   * carried (and overriding stripGps/stripExif for the GPS block). HEIC inputs get
+   * them on the converted JPEG; JPEG inputs are promoted from pass-through to an
+   * injected cache copy (the original file is never mutated); PNG ignores this.
+   * Useful when the input lost its location en route — e.g. Android's photo
+   * picker zeroes GPS EXIF, and camera captures arrive as JPEG without a fix.
+   */
+  gps?: { latitude: number; longitude: number };
 };
 
 async function convertImage(
@@ -21,6 +30,10 @@ async function convertImage(
     stripExif: options?.stripExif ?? false,
     stripGps: options?.stripGps ?? false,
   };
+  if (options?.gps) {
+    nativeOptions.gpsLatitude = options.gps.latitude;
+    nativeOptions.gpsLongitude = options.gps.longitude;
+  }
 
   if (options?.returnBase64) {
     if (!SimpleHeic2jpg.convertImageAtPathAsBase64) {

@@ -14,9 +14,14 @@ RCT_EXPORT_MODULE(SimpleHeic2jpg)
                    options:(JS::NativeSimpleHeic2jpg::ConvertNativeOptions &)options
                    resolve:(RCTPromiseResolveBlock)resolve
                     reject:(RCTPromiseRejectBlock)reject {
+  // Optional codegen doubles arrive as std::optional; nil NSNumber means "absent".
+  std::optional<double> lat = options.gpsLatitude();
+  std::optional<double> lng = options.gpsLongitude();
   [self convertImageAtPathImplementation:path
                                stripExif:options.stripExif()
                                 stripGps:options.stripGps()
+                             gpsLatitude:lat.has_value() ? @(lat.value()) : nil
+                            gpsLongitude:lng.has_value() ? @(lng.value()) : nil
                                  resolve:resolve
                                   reject:reject];
 }
@@ -25,9 +30,13 @@ RCT_EXPORT_MODULE(SimpleHeic2jpg)
                            options:(JS::NativeSimpleHeic2jpg::ConvertNativeOptions &)options
                            resolve:(RCTPromiseResolveBlock)resolve
                             reject:(RCTPromiseRejectBlock)reject {
+  std::optional<double> lat = options.gpsLatitude();
+  std::optional<double> lng = options.gpsLongitude();
   [self convertImageAtPathAsBase64Implementation:path
                                        stripExif:options.stripExif()
                                         stripGps:options.stripGps()
+                                     gpsLatitude:lat.has_value() ? @(lat.value()) : nil
+                                    gpsLongitude:lng.has_value() ? @(lng.value()) : nil
                                          resolve:resolve
                                           reject:reject];
 }
@@ -38,6 +47,12 @@ RCT_EXPORT_MODULE(SimpleHeic2jpg)
 }
 #else
 // Old Architecture 메서드
+// Defensive read: the JS wrapper omits the key when absent; reject NSNull/odd types.
+static NSNumber *SHJOptionalNumber(NSDictionary *options, NSString *key) {
+  id value = options[key];
+  return [value isKindOfClass:[NSNumber class]] ? (NSNumber *)value : nil;
+}
+
 RCT_EXPORT_METHOD(convertImageAtPath:(NSString *)path
                   options:(NSDictionary *)options
                   resolver:(RCTPromiseResolveBlock)resolve
@@ -45,6 +60,8 @@ RCT_EXPORT_METHOD(convertImageAtPath:(NSString *)path
   [self convertImageAtPathImplementation:path
                                stripExif:[options[@"stripExif"] boolValue]
                                 stripGps:[options[@"stripGps"] boolValue]
+                             gpsLatitude:SHJOptionalNumber(options, @"gpsLatitude")
+                            gpsLongitude:SHJOptionalNumber(options, @"gpsLongitude")
                                  resolve:resolve
                                   reject:reject];
 }
@@ -56,6 +73,8 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
   [self convertImageAtPathAsBase64Implementation:path
                                        stripExif:[options[@"stripExif"] boolValue]
                                         stripGps:[options[@"stripGps"] boolValue]
+                                     gpsLatitude:SHJOptionalNumber(options, @"gpsLatitude")
+                                    gpsLongitude:SHJOptionalNumber(options, @"gpsLongitude")
                                          resolve:resolve
                                           reject:reject];
 }
@@ -65,6 +84,8 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
 - (void)convertImageAtPathImplementation:(NSString *)path
                                stripExif:(BOOL)stripExif
                                 stripGps:(BOOL)stripGps
+                             gpsLatitude:(NSNumber *)gpsLatitude
+                            gpsLongitude:(NSNumber *)gpsLongitude
                                  resolve:(RCTPromiseResolveBlock)resolve
                                   reject:(RCTPromiseRejectBlock)reject {
   CGImageSourceRef imageSource = NULL;
@@ -128,10 +149,37 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
                     destinationURL:destinationURL
                          stripExif:stripExif
                           stripGps:stripGps
+                       gpsLatitude:gpsLatitude
+                      gpsLongitude:gpsLongitude
                            resolve:resolve
                             reject:reject];
-    } else if (CFStringCompare(imageType, CFSTR("public.jpeg"), 0) == kCFCompareEqualTo ||
-               CFStringCompare(imageType, CFSTR("public.png"), 0) == kCFCompareEqualTo) {
+    } else if (CFStringCompare(imageType, CFSTR("public.jpeg"), 0) == kCFCompareEqualTo) {
+      if (gpsLatitude && gpsLongitude) {
+        // gps option promotes the JPEG pass-through to an injected copy; the caller's
+        // file is never mutated. AddImageFromSource rewrites metadata without
+        // re-encoding pixels when source and destination are both JPEG.
+        NSString *outputImagePath = [self uniqueJPEGOutputPathForFilePath:url.path];
+        NSURL *destinationURL = [NSURL fileURLWithPath:outputImagePath];
+        NSData *jpegData = [NSData dataWithContentsOfURL:url];
+        if (!jpegData) {
+          reject(@"Error Loading Image", @"Failed to load image from path", nil);
+          return;
+        }
+        if ([self writeFinalizedJPEGData:jpegData
+                             imageSource:imageSource
+                          destinationURL:destinationURL
+                               stripExif:NO
+                                stripGps:NO
+                             gpsLatitude:gpsLatitude
+                            gpsLongitude:gpsLongitude
+                                  reject:reject]) {
+          resolve(destinationURL.path);
+        }
+      } else {
+        resolve(path);
+      }
+    } else if (CFStringCompare(imageType, CFSTR("public.png"), 0) == kCFCompareEqualTo) {
+      // PNG has no reliable EXIF container; gps injection is JPEG/HEIC-only.
       resolve(path);
     } else {
       reject(@"Unsupported Image Format", @"Unsupported image format", nil);
@@ -148,6 +196,8 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
 - (void)convertImageAtPathAsBase64Implementation:(NSString *)path
                                        stripExif:(BOOL)stripExif
                                         stripGps:(BOOL)stripGps
+                                     gpsLatitude:(NSNumber *)gpsLatitude
+                                    gpsLongitude:(NSNumber *)gpsLongitude
                                         resolve:(RCTPromiseResolveBlock)resolve
                                          reject:(RCTPromiseRejectBlock)reject {
   CGImageSourceRef imageSource = NULL;
@@ -212,15 +262,40 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
                          destinationURL:destinationURL
                               stripExif:stripExif
                                stripGps:stripGps
+                            gpsLatitude:gpsLatitude
+                           gpsLongitude:gpsLongitude
                                   reject:reject]) {
         return;
       }
 
       // Read finalized destination bytes so metadata/finalization are included.
       base64SourceData = [NSData dataWithContentsOfURL:destinationURL];
+    } else if (CFStringCompare(imageType, CFSTR("public.jpeg"), 0) == kCFCompareEqualTo &&
+               gpsLatitude && gpsLongitude) {
+      // Same injected-copy promotion as the URI path; the temporary copy is removed
+      // in @finally via generatedJPEGPath, the caller's file is never mutated.
+      generatedJPEGPath = [self uniqueTemporaryJPEGOutputPathForFilePath:url.path];
+      NSURL *destinationURL = [NSURL fileURLWithPath:generatedJPEGPath];
+      NSData *jpegData = [NSData dataWithContentsOfURL:url];
+      if (!jpegData) {
+        reject(@"Error Loading Image", @"Failed to load image from path", nil);
+        return;
+      }
+      if (![self writeFinalizedJPEGData:jpegData
+                            imageSource:imageSource
+                         destinationURL:destinationURL
+                              stripExif:NO
+                               stripGps:NO
+                            gpsLatitude:gpsLatitude
+                           gpsLongitude:gpsLongitude
+                                 reject:reject]) {
+        return;
+      }
+      base64SourceData = [NSData dataWithContentsOfURL:destinationURL];
     } else if (CFStringCompare(imageType, CFSTR("public.jpeg"), 0) == kCFCompareEqualTo ||
                CFStringCompare(imageType, CFSTR("public.png"), 0) == kCFCompareEqualTo) {
       // JPEG/JPG/PNG inputs are caller-owned; read original bytes and never delete them.
+      // PNG is always pass-through: it has no reliable EXIF container for gps injection.
       base64SourceData = [NSData dataWithContentsOfURL:url];
     } else {
       reject(@"Unsupported Image Format", @"Unsupported image format", nil);
@@ -305,6 +380,8 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
                 destinationURL:(NSURL *)destinationURL
                      stripExif:(BOOL)stripExif
                       stripGps:(BOOL)stripGps
+                   gpsLatitude:(NSNumber *)gpsLatitude
+                  gpsLongitude:(NSNumber *)gpsLongitude
                         reject:(RCTPromiseRejectBlock)reject {
   CGImageSourceRef source = NULL;
   CGImageDestinationRef destination = NULL;
@@ -346,6 +423,32 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
         propertiesToWrite = strippedProperties;
       }
     }
+    // GPS injection runs after the strip pass so the injected coordinates win over
+    // both the source values and the strip flags (same contract as Android: injection
+    // overrides stripGps/stripExif for the GPS block only). Reuses strippedProperties
+    // as the mutable working dict; creates one when the source had no properties.
+    if (gpsLatitude && gpsLongitude) {
+      if (!strippedProperties) {
+        strippedProperties = imageProperties
+            ? CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, imageProperties)
+            : CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
+                                        &kCFTypeDictionaryKeyCallBacks,
+                                        &kCFTypeDictionaryValueCallBacks);
+      }
+      if (strippedProperties) {
+        double latitude = gpsLatitude.doubleValue;
+        double longitude = gpsLongitude.doubleValue;
+        NSDictionary *gpsDictionary = @{
+          (id)kCGImagePropertyGPSLatitude : @(fabs(latitude)),
+          (id)kCGImagePropertyGPSLatitudeRef : latitude >= 0 ? @"N" : @"S",
+          (id)kCGImagePropertyGPSLongitude : @(fabs(longitude)),
+          (id)kCGImagePropertyGPSLongitudeRef : longitude >= 0 ? @"E" : @"W",
+        };
+        CFDictionarySetValue(strippedProperties, kCGImagePropertyGPSDictionary,
+                             (__bridge CFDictionaryRef)gpsDictionary);
+        propertiesToWrite = strippedProperties;
+      }
+    }
     CGImageDestinationAddImageFromSource(destination, source, 0, propertiesToWrite);
 
     if (!CGImageDestinationFinalize(destination)) {
@@ -378,6 +481,8 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
                 destinationURL:(NSURL *)destinationURL
                      stripExif:(BOOL)stripExif
                       stripGps:(BOOL)stripGps
+                   gpsLatitude:(NSNumber *)gpsLatitude
+                  gpsLongitude:(NSNumber *)gpsLongitude
                        resolve:(RCTPromiseResolveBlock)resolve
                         reject:(RCTPromiseRejectBlock)reject {
   if ([self writeFinalizedJPEGData:imageData
@@ -385,6 +490,8 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
                     destinationURL:destinationURL
                          stripExif:stripExif
                           stripGps:stripGps
+                       gpsLatitude:gpsLatitude
+                      gpsLongitude:gpsLongitude
                              reject:reject]) {
     resolve(destinationURL.path);
   }

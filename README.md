@@ -76,7 +76,36 @@ await convertImage(path, { stripExif: true });
 
 Stripping only applies to **HEIC/HEIF inputs that are converted**. JPEG and PNG inputs are passed through without re-encoding, so their metadata is returned untouched — `convertImage(jpgPath, { stripGps: true })` does not modify the original JPEG.
 
+### Injecting GPS coordinates
+
+Pass `gps` to write coordinates into the converted JPEG:
+
+```js
+await convertImage(path, {
+  gps: { latitude: 37.5665, longitude: 126.978 },
+});
+```
+
+- The injected coordinates replace whatever GPS the source carried.
+- Injection wins over `stripGps` / `stripExif` for the GPS block only: strip removes the source GPS first, then the provided coordinates are written. Other EXIF is unaffected.
+- Signed decimal degrees; the hemisphere refs (N/S, E/W) are derived from the sign.
+- **HEIC/HEIF input**: coordinates are written onto the converted JPEG.
+- **JPEG input**: normally a pass-through, but when `gps` is provided the JPEG is copied (metadata rewritten, pixels not re-encoded) and the returned path points to the injected copy — the original file is never mutated. Camera captures, which arrive as JPEG, get GPS this way.
+- **PNG input**: always a pass-through; PNG has no reliable EXIF container, so `gps` is ignored.
+
+This pairs with the photo-picker section below: when Android's system picker hands you a file with zeroed GPS, your app can re-attach coordinates it knows from another source (its own location fix, MediaStore query, or user input).
+
 > Platform note: on iOS, `stripExif` removes the EXIF and GPS metadata blocks but may retain camera make/model fields stored in the TIFF block. GPS is removed on both platforms; Android's `stripExif` also drops make/model. Full parity is deferred to a future major release.
+
+### GPS metadata and the Android photo picker
+
+If the converted output has no GPS tags even though the original photo has them, check **how the input file reached your app** before suspecting this library. On Android, files returned by the system photo picker (`PICK_IMAGES` / `PickVisualMedia`) have their GPS EXIF values zeroed out by the OS before your app ever sees the bytes. This is Android's scoped-storage location redaction ([the system hides location information by default](https://developer.android.com/training/data-storage/shared/media)), and it cannot be bypassed for picker URIs — `MediaStore.setRequireOriginal()` is rejected for them even with the `ACCESS_MEDIA_LOCATION` permission (AOSP `PickerUriResolver`: "Require Original is not supported for Picker URI").
+
+This library preserves GPS whenever the input file actually contains it. To feed it GPS-bearing inputs on Android, use a path the OS does not redact:
+
+- files your app already owns on disk (app storage, downloads you wrote, camera output)
+- the Storage Access Framework / documents picker (`ACTION_OPEN_DOCUMENT`)
+- a MediaStore URI resolved with `ACCESS_MEDIA_LOCATION` + `MediaStore.setRequireOriginal()`, copied to a local file first (`content://` is not accepted directly — see the input path contract)
 
 ### EXIF orientation policy
 

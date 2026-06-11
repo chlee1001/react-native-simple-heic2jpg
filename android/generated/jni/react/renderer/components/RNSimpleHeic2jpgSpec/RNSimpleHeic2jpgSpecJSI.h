@@ -17,12 +17,14 @@ namespace facebook::react {
 
 #pragma mark - NativeSimpleHeic2jpgConvertNativeOptions
 
-template <typename P0, typename P1>
+template <typename P0, typename P1, typename P2, typename P3>
 struct NativeSimpleHeic2jpgConvertNativeOptions {
   P0 stripExif{};
-  P1 stripGps;
+  P1 stripGps{};
+  P2 gpsLatitude{};
+  P3 gpsLongitude;
   bool operator==(const NativeSimpleHeic2jpgConvertNativeOptions &other) const {
-    return stripExif == other.stripExif && stripGps == other.stripGps;
+    return stripExif == other.stripExif && stripGps == other.stripGps && gpsLatitude == other.gpsLatitude && gpsLongitude == other.gpsLongitude;
   }
 };
 
@@ -36,7 +38,9 @@ struct NativeSimpleHeic2jpgConvertNativeOptionsBridging {
       const std::shared_ptr<CallInvoker> &jsInvoker) {
     T result{
       bridging::fromJs<decltype(types.stripExif)>(rt, value.getProperty(rt, "stripExif"), jsInvoker),
-      bridging::fromJs<decltype(types.stripGps)>(rt, value.getProperty(rt, "stripGps"), jsInvoker)};
+      bridging::fromJs<decltype(types.stripGps)>(rt, value.getProperty(rt, "stripGps"), jsInvoker),
+      bridging::fromJs<decltype(types.gpsLatitude)>(rt, value.getProperty(rt, "gpsLatitude"), jsInvoker),
+      bridging::fromJs<decltype(types.gpsLongitude)>(rt, value.getProperty(rt, "gpsLongitude"), jsInvoker)};
     return result;
   }
 
@@ -45,6 +49,12 @@ struct NativeSimpleHeic2jpgConvertNativeOptionsBridging {
     return bridging::toJs(rt, value);
   }
   static bool stripGpsToJs(jsi::Runtime &rt, decltype(types.stripGps) value) {
+    return bridging::toJs(rt, value);
+  }
+  static double gpsLatitudeToJs(jsi::Runtime &rt, decltype(types.gpsLatitude) value) {
+    return bridging::toJs(rt, value);
+  }
+  static double gpsLongitudeToJs(jsi::Runtime &rt, decltype(types.gpsLongitude) value) {
     return bridging::toJs(rt, value);
   }
 #endif
@@ -56,6 +66,12 @@ struct NativeSimpleHeic2jpgConvertNativeOptionsBridging {
     auto result = facebook::jsi::Object(rt);
     result.setProperty(rt, "stripExif", bridging::toJs(rt, value.stripExif, jsInvoker));
     result.setProperty(rt, "stripGps", bridging::toJs(rt, value.stripGps, jsInvoker));
+    if (value.gpsLatitude) {
+      result.setProperty(rt, "gpsLatitude", bridging::toJs(rt, value.gpsLatitude.value(), jsInvoker));
+    }
+    if (value.gpsLongitude) {
+      result.setProperty(rt, "gpsLongitude", bridging::toJs(rt, value.gpsLongitude.value(), jsInvoker));
+    }
     return result;
   }
 };

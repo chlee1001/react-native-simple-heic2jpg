@@ -131,4 +131,55 @@ class CopyExifTest {
       out.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
     )
   }
+
+  /**
+   * Injection contract: provided coordinates replace the source GPS (37.5/127.0) AND win
+   * over stripGps — the strip pass skips copying the source block, then the injected
+   * coordinates are written. Negative longitude exercises the W-hemisphere encoding.
+   */
+  @Test
+  fun gpsInjectionOverridesSourceAndStrip() {
+    val src = makeSourceWithExif()
+    val dst = blankJpegCopy("dst.jpg")
+
+    SimpleHeic2jpgModuleImpl.copyExif(
+      src.absolutePath,
+      dst.absolutePath,
+      stripExif = false,
+      stripGps = true,
+      gpsLatitude = 35.1796,
+      gpsLongitude = -129.0756
+    )
+
+    val out = ExifInterface(dst.absolutePath)
+    val latLong = out.latLong
+    assertNotNull("injected GPS must be present despite stripGps", latLong)
+    assertEquals("injected latitude round-trips", 35.1796, latLong!![0], 0.0005)
+    assertEquals("injected longitude round-trips (W hemisphere)", -129.0756, latLong[1], 0.0005)
+    assertEquals("non-GPS EXIF untouched by injection", "TestMake", out.getAttribute(ExifInterface.TAG_MAKE))
+  }
+
+  /**
+   * JPEG pass-through promotion: with the gps option, a JPEG input is copied into the
+   * cache and the coordinates land on the copy — the caller's original is never mutated.
+   */
+  @Test
+  fun jpegInjectionWritesCopyAndLeavesOriginalUntouched() {
+    val src = blankJpegCopy("camera.jpg")
+    val cacheDir = File(tempDir, "cache").apply { mkdirs() }
+
+    val copyPath = SimpleHeic2jpgModuleImpl.injectGpsIntoJpegCopy(
+      cacheDir,
+      src.absolutePath,
+      35.1796,
+      129.0756
+    )
+
+    assertNotNull("copy must land in the cache dir", copyPath)
+    val copyLatLong = ExifInterface(copyPath).latLong
+    assertNotNull("copy carries injected GPS", copyLatLong)
+    assertEquals(35.1796, copyLatLong!![0], 0.0005)
+    assertEquals(129.0756, copyLatLong[1], 0.0005)
+    assertNull("original file must stay untouched", ExifInterface(src.absolutePath).latLong)
+  }
 }

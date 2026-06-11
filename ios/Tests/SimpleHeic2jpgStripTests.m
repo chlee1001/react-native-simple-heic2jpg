@@ -17,6 +17,8 @@ typedef void (^StripTestRejectBlock)(NSString *code, NSString *message, NSError 
                 destinationURL:(NSURL *)destinationURL
                      stripExif:(BOOL)stripExif
                       stripGps:(BOOL)stripGps
+                   gpsLatitude:(NSNumber *)gpsLatitude
+                  gpsLongitude:(NSNumber *)gpsLongitude
                         reject:(StripTestRejectBlock)reject;
 @end
 
@@ -82,6 +84,16 @@ static NSDictionary *PropertiesOfData(NSData *data) {
 }
 
 - (NSDictionary *)writeWithStripExif:(BOOL)stripExif stripGps:(BOOL)stripGps {
+  return [self writeWithStripExif:stripExif
+                         stripGps:stripGps
+                      gpsLatitude:nil
+                     gpsLongitude:nil];
+}
+
+- (NSDictionary *)writeWithStripExif:(BOOL)stripExif
+                            stripGps:(BOOL)stripGps
+                         gpsLatitude:(NSNumber *)gpsLatitude
+                        gpsLongitude:(NSNumber *)gpsLongitude {
   NSData *source = MakeJPEGWithMetadata();
 
   // Sanity: the synthetic source actually carries GPS + orientation and is 3x2.
@@ -105,6 +117,8 @@ static NSDictionary *PropertiesOfData(NSData *data) {
                            destinationURL:outputURL
                                 stripExif:stripExif
                                  stripGps:stripGps
+                              gpsLatitude:gpsLatitude
+                             gpsLongitude:gpsLongitude
                                    reject:^(NSString *code, NSString *message, NSError *error) {
                                      rejected = YES;
                                    }];
@@ -161,6 +175,26 @@ static NSDictionary *PropertiesOfData(NSData *data) {
                @"stripExif implies GPS removal");
   XCTAssertNotNil(props[(id)kCGImagePropertyOrientation],
                   @"orientation tag must survive stripExif (top-level/TIFF, not EXIF dict)");
+}
+
+// Injection contract: provided coordinates replace the source GPS (fixture carries
+// 37.5/127.0) AND win over stripGps — strip removes the source block first, then the
+// injected block is written. Negative longitude exercises the W hemisphere ref.
+- (void)testGpsInjectionOverridesSourceAndStrip {
+  NSDictionary *props = [self writeWithStripExif:NO
+                                        stripGps:YES
+                                     gpsLatitude:@35.1796
+                                    gpsLongitude:@-129.0756];
+  NSDictionary *gps = props[(id)kCGImagePropertyGPSDictionary];
+  XCTAssertNotNil(gps, @"injected GPS dictionary should be present despite stripGps");
+  XCTAssertEqualWithAccuracy([gps[(id)kCGImagePropertyGPSLatitude] doubleValue],
+                             35.1796, 0.0005, @"injected latitude should round-trip");
+  XCTAssertEqualObjects(gps[(id)kCGImagePropertyGPSLatitudeRef], @"N",
+                        @"positive latitude is northern hemisphere");
+  XCTAssertEqualWithAccuracy([gps[(id)kCGImagePropertyGPSLongitude] doubleValue],
+                             129.0756, 0.0005, @"longitude is stored as absolute value");
+  XCTAssertEqualObjects(gps[(id)kCGImagePropertyGPSLongitudeRef], @"W",
+                        @"negative longitude is western hemisphere");
 }
 
 @end

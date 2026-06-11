@@ -142,8 +142,37 @@ object SimpleHeic2jpgModuleImpl {
     return fileExtension == "heic" || fileExtension == "heif"
   }
 
+  private fun isJpeg(fileExtension: String): Boolean {
+    return fileExtension == "jpg" || fileExtension == "jpeg"
+  }
+
   private fun isSupportedBase64Passthrough(fileExtension: String): Boolean {
-    return fileExtension == "jpg" || fileExtension == "jpeg" || fileExtension == "png"
+    return isJpeg(fileExtension) || fileExtension == "png"
+  }
+
+  // GPS injection for JPEG pass-through inputs: the caller's file is never mutated —
+  // the JPEG is copied into the conversion cache and the coordinates are written onto
+  // the copy (ExifInterface rewrites EXIF in place, no pixel re-encode). Only used when
+  // the gps option is present; plain pass-through still returns the original untouched.
+  // PNG stays excluded (no reliable EXIF container). internal + cacheDir param so the
+  // JVM unit test can exercise it without a ReactApplicationContext.
+  internal fun injectGpsIntoJpegCopy(
+    cacheDir: File,
+    srcPath: String,
+    gpsLatitude: Double,
+    gpsLongitude: Double
+  ): String {
+    val cacheFile = createCacheFile(cacheDir)
+    try {
+      File(srcPath).copyTo(cacheFile, overwrite = true)
+      val exif = ExifInterface(cacheFile.absolutePath)
+      exif.setLatLong(gpsLatitude, gpsLongitude)
+      exif.saveAttributes()
+    } catch (ex: Exception) {
+      cacheFile.delete()
+      throw ex
+    }
+    return cacheFile.absolutePath
   }
 
   private fun normalizeLocalFilePath(filePath: String): String {
@@ -181,7 +210,9 @@ object SimpleHeic2jpgModuleImpl {
     srcPath: String,
     dstPath: String,
     stripExif: Boolean = false,
-    stripGps: Boolean = false
+    stripGps: Boolean = false,
+    gpsLatitude: Double? = null,
+    gpsLongitude: Double? = null
   ) {
     val source = ExifInterface(srcPath)
     val destination = ExifInterface(dstPath)
@@ -197,6 +228,12 @@ object SimpleHeic2jpgModuleImpl {
       val attribute = source.getAttribute(tagName) ?: continue
       destination.setAttribute(tagName, attribute)
     }
+    // GPS injection runs after the copy/strip pass so the injected coordinates win
+    // over both the source values and the strip flags (the documented contract:
+    // injection overrides stripGps/stripExif for the GPS block only).
+    if (gpsLatitude != null && gpsLongitude != null) {
+      destination.setLatLong(gpsLatitude, gpsLongitude)
+    }
     destination.saveAttributes()
   }
 
@@ -205,11 +242,18 @@ object SimpleHeic2jpgModuleImpl {
   private fun ReadableMap?.optionFlag(key: String): Boolean =
     this != null && this.hasKey(key) && !this.isNull(key) && this.getBoolean(key)
 
+  // Reads an optional double option: absent/null key means "not provided" (null),
+  // matching the optional gpsLatitude/gpsLongitude fields in the codegen struct.
+  private fun ReadableMap?.optionDouble(key: String): Double? =
+    if (this != null && this.hasKey(key) && !this.isNull(key)) this.getDouble(key) else null
+
   private fun convertHeicToCache(
     context: ReactApplicationContext,
     correctedFilePath: String,
     stripExif: Boolean,
-    stripGps: Boolean
+    stripGps: Boolean,
+    gpsLatitude: Double?,
+    gpsLongitude: Double?
   ): String {
     // HEIF decoding via BitmapFactory is only available on Android P (API 28)+. On older
     // devices decodeFile returns null with no codec; guard explicitly so the caller gets
@@ -233,7 +277,7 @@ object SimpleHeic2jpgModuleImpl {
     var cachePath: String? = null
     try {
       cachePath = saveBitmapToCache(context, bitmap)
-      copyExif(correctedFilePath, cachePath, stripExif, stripGps)
+      copyExif(correctedFilePath, cachePath, stripExif, stripGps, gpsLatitude, gpsLongitude)
       return cachePath
     } catch (ex: Exception) {
       if (cachePath != null) {
@@ -275,12 +319,24 @@ object SimpleHeic2jpgModuleImpl {
             context,
             correctedFilePath,
             options.optionFlag("stripExif"),
-            options.optionFlag("stripGps")
+            options.optionFlag("stripGps"),
+            options.optionDouble("gpsLatitude"),
+            options.optionDouble("gpsLongitude")
           )
         )
       } else {
-        // JPEG/PNG inputs pass through unmodified, so strip options do not apply here.
-        promise.resolve(filePath)
+        val gpsLatitude = options.optionDouble("gpsLatitude")
+        val gpsLongitude = options.optionDouble("gpsLongitude")
+        if (isJpeg(fileExtension) && gpsLatitude != null && gpsLongitude != null) {
+          // gps option promotes the JPEG pass-through to an injected cache copy;
+          // the original file is never touched.
+          promise.resolve(
+            injectGpsIntoJpegCopy(ensureCacheDir(context), correctedFilePath, gpsLatitude, gpsLongitude)
+          )
+        } else {
+          // JPEG/PNG inputs pass through unmodified, so strip options do not apply here.
+          promise.resolve(filePath)
+        }
       }
     } catch (ex: Exception) {
       rejectWithCode(promise, ex)
@@ -304,11 +360,22 @@ object SimpleHeic2jpgModuleImpl {
           context,
           correctedFilePath,
           options.optionFlag("stripExif"),
-          options.optionFlag("stripGps")
+          options.optionFlag("stripGps"),
+          options.optionDouble("gpsLatitude"),
+          options.optionDouble("gpsLongitude")
         )
         promise.resolve(encodeFileAsBase64(File(generatedCachePath)))
       } else if (isSupportedBase64Passthrough(fileExtension)) {
-        promise.resolve(encodeFileAsBase64(File(correctedFilePath)))
+        val gpsLatitude = options.optionDouble("gpsLatitude")
+        val gpsLongitude = options.optionDouble("gpsLongitude")
+        if (isJpeg(fileExtension) && gpsLatitude != null && gpsLongitude != null) {
+          // Same injected-copy promotion as the URI path; the copy is cleaned in finally.
+          generatedCachePath =
+            injectGpsIntoJpegCopy(ensureCacheDir(context), correctedFilePath, gpsLatitude, gpsLongitude)
+          promise.resolve(encodeFileAsBase64(File(generatedCachePath)))
+        } else {
+          promise.resolve(encodeFileAsBase64(File(correctedFilePath)))
+        }
       } else {
         promise.reject(Exception("Unsupported image format for base64 conversion."))
       }
