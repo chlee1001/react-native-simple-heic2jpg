@@ -169,8 +169,14 @@ static NSDictionary *PropertiesOfData(NSData *data) {
 
 - (void)testStripExifRemovesExifAndGpsKeepsOrientation {
   NSDictionary *props = [self writeWithStripExif:YES stripGps:NO];
-  XCTAssertNil(props[(id)kCGImagePropertyExifDictionary],
-               @"EXIF dictionary should be removed by stripExif");
+  // ImageIO re-synthesizes a minimal EXIF dict (ColorSpace + PixelXDimension/
+  // PixelYDimension) for every JPEG it encodes, so the dict itself cannot be made nil via
+  // CGImageDestination. What stripExif must guarantee is that the source's own EXIF payload
+  // is gone: the fixture planted a UserComment, so assert that specific tag no longer
+  // survives (the synthesized dimension/colorspace baseline is allowed to remain).
+  NSDictionary *exif = props[(id)kCGImagePropertyExifDictionary];
+  XCTAssertNil(exif[(id)kCGImagePropertyExifUserComment],
+               @"source EXIF payload (UserComment) should be removed by stripExif");
   XCTAssertNil(props[(id)kCGImagePropertyGPSDictionary],
                @"stripExif implies GPS removal");
   XCTAssertNotNil(props[(id)kCGImagePropertyOrientation],
