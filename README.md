@@ -49,6 +49,24 @@ To receive raw base64 instead of a file URI:
 const base64 = await convertImage(path, { returnBase64: true });
 ```
 
+### JPEG quality
+
+Pass `quality` to control the JPEG encode quality of converted HEIC/HEIF images:
+
+```js
+// Smaller file, default quality
+await convertImage(path);
+
+// Higher quality, larger file
+await convertImage(path, { quality: 95 });
+```
+
+- `quality` is an integer from `0` (smallest) to `100` (best). It defaults to `80`.
+- Out-of-range values are clamped to `0`–`100`; fractional values are rounded.
+- Quality only applies to **HEIC/HEIF inputs that are converted**. JPEG and PNG inputs pass through without re-encoding, so `quality` has no effect on them.
+
+> Note: this release standardizes the JPEG quality across platforms. Previously Android encoded at `100` and iOS used the system default; both now default to `80`, so converted JPEGs are noticeably smaller. Pass `quality: 100` for the maximum-quality (largest) output.
+
 ### Input path contract
 
 `convertImage` accepts local image files as either:

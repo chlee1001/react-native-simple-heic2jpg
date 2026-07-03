@@ -20,6 +20,7 @@ RCT_EXPORT_MODULE(SimpleHeic2jpg)
   [self convertImageAtPathImplementation:path
                                stripExif:options.stripExif()
                                 stripGps:options.stripGps()
+                                 quality:options.quality()
                              gpsLatitude:lat.has_value() ? @(lat.value()) : nil
                             gpsLongitude:lng.has_value() ? @(lng.value()) : nil
                                  resolve:resolve
@@ -35,6 +36,7 @@ RCT_EXPORT_MODULE(SimpleHeic2jpg)
   [self convertImageAtPathAsBase64Implementation:path
                                        stripExif:options.stripExif()
                                         stripGps:options.stripGps()
+                                         quality:options.quality()
                                      gpsLatitude:lat.has_value() ? @(lat.value()) : nil
                                     gpsLongitude:lng.has_value() ? @(lng.value()) : nil
                                          resolve:resolve
@@ -53,6 +55,15 @@ static NSNumber *SHJOptionalNumber(NSDictionary *options, NSString *key) {
   return [value isKindOfClass:[NSNumber class]] ? (NSNumber *)value : nil;
 }
 
+// Old Architecture reads an untyped NSDictionary, so a direct native caller may omit
+// "quality"; default to 80 to match the JS wrapper. The New Architecture path reads the
+// typed, non-optional codegen field via options.quality(), which the JS wrapper always
+// fills — a direct caller that omits it there gets 0, not this default.
+static double SHJQuality(NSDictionary *options) {
+  id value = options[@"quality"];
+  return [value isKindOfClass:[NSNumber class]] ? [(NSNumber *)value doubleValue] : 80;
+}
+
 RCT_EXPORT_METHOD(convertImageAtPath:(NSString *)path
                   options:(NSDictionary *)options
                   resolver:(RCTPromiseResolveBlock)resolve
@@ -60,6 +71,7 @@ RCT_EXPORT_METHOD(convertImageAtPath:(NSString *)path
   [self convertImageAtPathImplementation:path
                                stripExif:[options[@"stripExif"] boolValue]
                                 stripGps:[options[@"stripGps"] boolValue]
+                                 quality:SHJQuality(options)
                              gpsLatitude:SHJOptionalNumber(options, @"gpsLatitude")
                             gpsLongitude:SHJOptionalNumber(options, @"gpsLongitude")
                                  resolve:resolve
@@ -73,6 +85,7 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
   [self convertImageAtPathAsBase64Implementation:path
                                        stripExif:[options[@"stripExif"] boolValue]
                                         stripGps:[options[@"stripGps"] boolValue]
+                                         quality:SHJQuality(options)
                                      gpsLatitude:SHJOptionalNumber(options, @"gpsLatitude")
                                     gpsLongitude:SHJOptionalNumber(options, @"gpsLongitude")
                                          resolve:resolve
@@ -84,6 +97,7 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
 - (void)convertImageAtPathImplementation:(NSString *)path
                                stripExif:(BOOL)stripExif
                                 stripGps:(BOOL)stripGps
+                                 quality:(double)quality
                              gpsLatitude:(NSNumber *)gpsLatitude
                             gpsLongitude:(NSNumber *)gpsLongitude
                                  resolve:(RCTPromiseResolveBlock)resolve
@@ -135,9 +149,14 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
 
       CIImage *ciImage = [CIImage imageWithCGImage:cgImage];
       CIContext *context = [CIContext context];
+      // kCGImageDestinationLossyCompressionQuality takes 0.0–1.0; the public API
+      // uses 0–100, so scale here. HEIC→JPEG is the only re-encode path.
+      NSDictionary *jpegOptions = @{
+        (__bridge NSString *)kCGImageDestinationLossyCompressionQuality: @(quality / 100.0)
+      };
       NSData *jpegData = [context JPEGRepresentationOfImage:ciImage
                                                  colorSpace:colorSpace
-                                                    options:@{}];
+                                                    options:jpegOptions];
       if (!jpegData) {
         reject(@"Image Conversion Failed", @"Image conversion to JPEG representation failed", nil);
         return;
@@ -196,6 +215,7 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
 - (void)convertImageAtPathAsBase64Implementation:(NSString *)path
                                        stripExif:(BOOL)stripExif
                                         stripGps:(BOOL)stripGps
+                                         quality:(double)quality
                                      gpsLatitude:(NSNumber *)gpsLatitude
                                     gpsLongitude:(NSNumber *)gpsLongitude
                                         resolve:(RCTPromiseResolveBlock)resolve
@@ -249,9 +269,14 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
 
       CIImage *ciImage = [CIImage imageWithCGImage:cgImage];
       CIContext *context = [CIContext context];
+      // Same 0–100 → 0.0–1.0 scaling as the URI path; writeFinalizedJPEGData below
+      // copies these encoded bytes without re-encoding, so quality is set here.
+      NSDictionary *jpegOptions = @{
+        (__bridge NSString *)kCGImageDestinationLossyCompressionQuality: @(quality / 100.0)
+      };
       NSData *jpegData = [context JPEGRepresentationOfImage:ciImage
                                                  colorSpace:colorSpace
-                                                    options:@{}];
+                                                    options:jpegOptions];
       if (!jpegData) {
         reject(@"Image Conversion Failed", @"Image conversion to JPEG representation failed", nil);
         return;
