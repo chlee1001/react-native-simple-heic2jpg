@@ -441,9 +441,12 @@ RCT_EXPORT_METHOD(convertImageAtPathAsBase64:(NSString *)path
       if (strippedProperties) {
         // Either flag removes GPS; stripExif additionally removes the EXIF block.
         // Orientation is untouched (it lives in the TIFF/top-level dicts).
-        CFDictionaryRemoveValue(strippedProperties, kCGImagePropertyGPSDictionary);
+        // Must set kCFNull rather than remove the key: CGImageDestinationAddImageFromSource
+        // MERGES these properties onto the source image's metadata, so a removed key falls
+        // back to the source value. kCFNull is the ImageIO sentinel that actually strips it.
+        CFDictionarySetValue(strippedProperties, kCGImagePropertyGPSDictionary, kCFNull);
         if (stripExif) {
-          CFDictionaryRemoveValue(strippedProperties, kCGImagePropertyExifDictionary);
+          CFDictionarySetValue(strippedProperties, kCGImagePropertyExifDictionary, kCFNull);
         }
         propertiesToWrite = strippedProperties;
       }
