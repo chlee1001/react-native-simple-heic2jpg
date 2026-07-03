@@ -195,8 +195,7 @@ object SimpleHeic2jpgModuleImpl {
   // Copies whitelisted EXIF tags from srcPath onto dstPath.
   // stripGps: drop GPS tags only. stripExif: drop everything except orientation
   // (orientation must survive because BitmapFactory does not rotate pixels — the tag
-  // is the only thing keeping the image upright). P0 callers pass false/false; the
-  // strip branches are wired up here so P1 only has to thread the options through.
+  // is the only thing keeping the image upright).
   //
   // Orientation policy: tag preserved, pixels NOT rotated. BitmapFactory.decodeFile
   // returns raw, unrotated pixels, so copying TAG_ORIENTATION leaves the consumer to
