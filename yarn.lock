@@ -2245,6 +2245,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@dr.pogodin/react-native-fs@npm:^2.38.2":
+  version: 2.38.2
+  resolution: "@dr.pogodin/react-native-fs@npm:2.38.2"
+  dependencies:
+    buffer: ^6.0.3
+    http-status-codes: ^2.3.0
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: cc8b9b9817effdde062b9e56d12836d666ff78e5907c69ee817af74d960e83936f0aa457ff105d2e4786f743cb7a6ec5179cf3e020ce65994e77350cd9cca615
+  languageName: node
+  linkType: hard
+
 "@eslint-community/eslint-utils@npm:^4.2.0":
   version: 4.4.0
   resolution: "@eslint-community/eslint-utils@npm:4.4.0"
@@ -4749,13 +4762,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"base-64@npm:^0.1.0":
-  version: 0.1.0
-  resolution: "base-64@npm:0.1.0"
-  checksum: 5a42938f82372ab5392cbacc85a5a78115cbbd9dbef9f7540fa47d78763a3a8bd7d598475f0d92341f66285afd377509851a9bb5c67bbecb89686e9255d5b3eb
-  languageName: node
-  linkType: hard
-
 "base64-arraybuffer@npm:^1.0.2":
   version: 1.0.2
   resolution: "base64-arraybuffer@npm:1.0.2"
@@ -4912,6 +4918,16 @@ __metadata:
     base64-js: ^1.3.1
     ieee754: ^1.1.13
   checksum: e2cf8429e1c4c7b8cbd30834ac09bd61da46ce35f5c22a78e6c2f04497d6d25541b16881e30a019c6fd3154150650ccee27a308eff3e26229d788bbdeb08ab84
+  languageName: node
+  linkType: hard
+
+"buffer@npm:^6.0.3":
+  version: 6.0.3
+  resolution: "buffer@npm:6.0.3"
+  dependencies:
+    base64-js: ^1.3.1
+    ieee754: ^1.2.1
+  checksum: 5ad23293d9a731e4318e420025800b42bf0d264004c0286c8cc010af7a270c7a0f6522e84f54b9ad65cbd6db20b8badbfd8d2ebf4f80fa03dab093b89e68c3f9
   languageName: node
   linkType: hard
 
@@ -7958,6 +7974,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"http-status-codes@npm:^2.3.0":
+  version: 2.3.0
+  resolution: "http-status-codes@npm:2.3.0"
+  checksum: dae3b99e0155441b6df28e8265ff27c56a45f82c6092f736414233e9ccf063d5ea93c1e1279e8b499c4642e2538b37995c76b1640ed3f615d0e2883d3a1dcfd5
+  languageName: node
+  linkType: hard
+
 "https-proxy-agent@npm:8.0.0":
   version: 8.0.0
   resolution: "https-proxy-agent@npm:8.0.0"
@@ -8029,7 +8052,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ieee754@npm:^1.1.13":
+"ieee754@npm:^1.1.13, ieee754@npm:^1.2.1":
   version: 1.2.1
   resolution: "ieee754@npm:1.2.1"
   checksum: 5144c0c9815e54ada181d80a0b810221a253562422e7c6c3a60b1901154184f49326ec239d618c416c1c5945a2e197107aee8d986a3dd836b53dffefd99b5e7e
@@ -11450,22 +11473,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-fs@npm:^2.20.0":
-  version: 2.20.0
-  resolution: "react-native-fs@npm:2.20.0"
-  dependencies:
-    base-64: ^0.1.0
-    utf8: ^3.0.0
-  peerDependencies:
-    react-native: "*"
-    react-native-windows: "*"
-  peerDependenciesMeta:
-    react-native-windows:
-      optional: true
-  checksum: 0be9bb9a5c13b501d0a3006efc3aa5c0b5b211456ee04718297f4e522532f3527f1daa220bd67d3b82d819ed8fdab8f64b7d6e0d7b768c1fd1d8ec9122d94316
-  languageName: node
-  linkType: hard
-
 "react-native-image-picker@npm:^8.2.1":
   version: 8.2.1
   resolution: "react-native-image-picker@npm:8.2.1"
@@ -11517,6 +11524,7 @@ __metadata:
     "@babel/core": ^7.25.2
     "@babel/preset-env": ^7.25.3
     "@babel/runtime": ^7.25.0
+    "@dr.pogodin/react-native-fs": ^2.38.2
     "@react-native-community/cli": 20.1.0
     "@react-native-community/cli-platform-android": 20.1.0
     "@react-native-community/cli-platform-ios": 20.1.0
@@ -11530,7 +11538,6 @@ __metadata:
     react: 19.2.3
     react-native: 0.85.3
     react-native-builder-bob: ^0.40.5
-    react-native-fs: ^2.20.0
     react-native-image-picker: ^8.2.1
     react-native-permissions: ^5.5.1
     react-native-safe-area-context: ^5.5.2
@@ -13635,13 +13642,6 @@ __metadata:
   version: 5.0.0
   resolution: "url-join@npm:5.0.0"
   checksum: 5921384a8ad4395b49ce4b50aa26efbc429cebe0bc8b3660ad693dd12fd859747b5369be0443e60e53a7850b2bc9d7d0687bcb94386662b40e743596bbf38101
-  languageName: node
-  linkType: hard
-
-"utf8@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "utf8@npm:3.0.0"
-  checksum: cb89a69ad9ab393e3eae9b25305b3ff08bebca9adc839191a34f90777eb2942f86a96369d2839925fea58f8f722f7e27031d697f10f5f39690f8c5047303e62d
   languageName: node
   linkType: hard
 

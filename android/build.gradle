@@ -86,6 +86,15 @@ android {
     targetCompatibility JavaVersion.VERSION_1_8
   }
 
+  testOptions {
+    unitTests {
+      // copyExif touches android.util.Log etc.; Robolectric supplies real framework
+      // classes, and default-return covers anything it does not shadow.
+      includeAndroidResources = true
+      returnDefaultValues = true
+    }
+  }
+
   sourceSets {
     main {
       if (isNewArchitectureEnabled()) {
@@ -116,6 +125,18 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
   implementation "androidx.exifinterface:exifinterface:1.3.7"
+
+  // Unit test stack. Robolectric 4.10.x runs on JDK 17 / AGP 7.2 and is compatible
+  // with Kotlin 1.7.0. exifinterface is added on the test classpath so the test can
+  // stamp a fixture's EXIF with the same library the production code reads.
+  testImplementation "junit:junit:4.13.2"
+  testImplementation "org.robolectric:robolectric:4.10.3"
+  testImplementation "androidx.test:core:1.5.0"
+  testImplementation "androidx.test.ext:junit:1.1.5"
+  testImplementation "androidx.exifinterface:exifinterface:1.3.7"
+  // ReactApplicationContext is abstract in RN 0.85; mock it for tests that reject
+  // before the context is ever dereferenced (e.g. content:// URI validation).
+  testImplementation "org.mockito:mockito-core:5.11.0"
 }
 
 if (isNewArchitectureEnabled()) {

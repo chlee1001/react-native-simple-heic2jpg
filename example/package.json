@@ -13,11 +13,11 @@
     "pod-install-old": "cd ios && bundle exec pod deintegrate && RCT_NEW_ARCH_ENABLED=0 bundle exec pod install"
   },
   "dependencies": {
+    "@dr.pogodin/react-native-fs": "^2.38.2",
     "base64-arraybuffer": "^1.0.2",
     "exifreader": "^4.25.0",
     "react": "19.2.3",
     "react-native": "0.85.3",
-    "react-native-fs": "^2.20.0",
     "react-native-image-picker": "^8.2.1",
     "react-native-permissions": "^5.5.1",
     "react-native-safe-area-context": "^5.5.2"

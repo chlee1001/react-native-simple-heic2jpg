@@ -15,6 +15,68 @@
 namespace facebook::react {
 
 
+#pragma mark - NativeSimpleHeic2jpgConvertNativeOptions
+
+template <typename P0, typename P1, typename P2, typename P3>
+struct NativeSimpleHeic2jpgConvertNativeOptions {
+  P0 stripExif{};
+  P1 stripGps{};
+  P2 gpsLatitude{};
+  P3 gpsLongitude;
+  bool operator==(const NativeSimpleHeic2jpgConvertNativeOptions &other) const {
+    return stripExif == other.stripExif && stripGps == other.stripGps && gpsLatitude == other.gpsLatitude && gpsLongitude == other.gpsLongitude;
+  }
+};
+
+template <typename T>
+struct NativeSimpleHeic2jpgConvertNativeOptionsBridging {
+  static T types;
+
+  static T fromJs(
+      jsi::Runtime &rt,
+      const jsi::Object &value,
+      const std::shared_ptr<CallInvoker> &jsInvoker) {
+    T result{
+      bridging::fromJs<decltype(types.stripExif)>(rt, value.getProperty(rt, "stripExif"), jsInvoker),
+      bridging::fromJs<decltype(types.stripGps)>(rt, value.getProperty(rt, "stripGps"), jsInvoker),
+      bridging::fromJs<decltype(types.gpsLatitude)>(rt, value.getProperty(rt, "gpsLatitude"), jsInvoker),
+      bridging::fromJs<decltype(types.gpsLongitude)>(rt, value.getProperty(rt, "gpsLongitude"), jsInvoker)};
+    return result;
+  }
+
+#ifdef DEBUG
+  static bool stripExifToJs(jsi::Runtime &rt, decltype(types.stripExif) value) {
+    return bridging::toJs(rt, value);
+  }
+  static bool stripGpsToJs(jsi::Runtime &rt, decltype(types.stripGps) value) {
+    return bridging::toJs(rt, value);
+  }
+  static double gpsLatitudeToJs(jsi::Runtime &rt, decltype(types.gpsLatitude) value) {
+    return bridging::toJs(rt, value);
+  }
+  static double gpsLongitudeToJs(jsi::Runtime &rt, decltype(types.gpsLongitude) value) {
+    return bridging::toJs(rt, value);
+  }
+#endif
+
+  static jsi::Object toJs(
+      jsi::Runtime &rt,
+      const T &value,
+      const std::shared_ptr<CallInvoker> &jsInvoker) {
+    auto result = facebook::jsi::Object(rt);
+    result.setProperty(rt, "stripExif", bridging::toJs(rt, value.stripExif, jsInvoker));
+    result.setProperty(rt, "stripGps", bridging::toJs(rt, value.stripGps, jsInvoker));
+    if (value.gpsLatitude) {
+      result.setProperty(rt, "gpsLatitude", bridging::toJs(rt, value.gpsLatitude.value(), jsInvoker));
+    }
+    if (value.gpsLongitude) {
+      result.setProperty(rt, "gpsLongitude", bridging::toJs(rt, value.gpsLongitude.value(), jsInvoker));
+    }
+    return result;
+  }
+};
+
+
 template <typename T>
 class JSI_EXPORT NativeSimpleHeic2jpgCxxSpec : public TurboModule {
 public:
@@ -22,25 +84,27 @@ public:
 
 protected:
   NativeSimpleHeic2jpgCxxSpec(std::shared_ptr<CallInvoker> jsInvoker) : TurboModule(std::string{NativeSimpleHeic2jpgCxxSpec::kModuleName}, jsInvoker) {
-    methodMap_["convertImageAtPath"] = MethodMetadata {.argCount = 1, .invoker = __convertImageAtPath};
-    methodMap_["convertImageAtPathAsBase64"] = MethodMetadata {.argCount = 1, .invoker = __convertImageAtPathAsBase64};
+    methodMap_["convertImageAtPath"] = MethodMetadata {.argCount = 2, .invoker = __convertImageAtPath};
+    methodMap_["convertImageAtPathAsBase64"] = MethodMetadata {.argCount = 2, .invoker = __convertImageAtPathAsBase64};
   }
   
 private:
   static jsi::Value __convertImageAtPath(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
     static_assert(
-      bridging::getParameterCount(&T::convertImageAtPath) == 2,
-      "Expected convertImageAtPath(...) to have 2 parameters");
+      bridging::getParameterCount(&T::convertImageAtPath) == 3,
+      "Expected convertImageAtPath(...) to have 3 parameters");
     return bridging::callFromJs<jsi::Value>(rt, &T::convertImageAtPath,  static_cast<NativeSimpleHeic2jpgCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
-      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt));
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt),
+      count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asObject(rt));
   }
 
   static jsi::Value __convertImageAtPathAsBase64(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
     static_assert(
-      bridging::getParameterCount(&T::convertImageAtPathAsBase64) == 2,
-      "Expected convertImageAtPathAsBase64(...) to have 2 parameters");
+      bridging::getParameterCount(&T::convertImageAtPathAsBase64) == 3,
+      "Expected convertImageAtPathAsBase64(...) to have 3 parameters");
     return bridging::callFromJs<jsi::Value>(rt, &T::convertImageAtPathAsBase64,  static_cast<NativeSimpleHeic2jpgCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
-      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt));
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt),
+      count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asObject(rt));
   }
 };
 

@@ -4,11 +4,15 @@ import {
   Image,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { convertImage } from 'react-native-simple-heic2jpg';
+import {
+  convertImage,
+  type ConvertImageOptions,
+} from 'react-native-simple-heic2jpg';
 import {
   launchCamera,
   launchImageLibrary,
@@ -17,6 +21,7 @@ import {
   type ImageLibraryOptions,
   type ImagePickerResponse,
 } from 'react-native-image-picker';
+import * as RNFS from '@dr.pogodin/react-native-fs';
 import { isAndroid } from './constants/common';
 import { getImageExif } from './utils/imageHelper';
 import { checkAndRequestCameraLibraryPermission } from './utils/permissionHelper';
@@ -97,7 +102,12 @@ const exifDisplayLabels: Record<string, string> = {
   whitebalance: '화이트밸런스',
 };
 
+// GPS first: it is the primary thing this QA screen verifies, and camera JPEGs carry
+// enough EXIF that trailing keys would be cut by the 16-row display limit.
 const preferredExifKeys = [
+  'gpslatitude',
+  'gpslongitude',
+  'gpsaltitude',
   'make',
   'model',
   'lensmodel',
@@ -113,9 +123,6 @@ const preferredExifKeys = [
   'isospeedratings',
   'focallength',
   'whitebalance',
-  'gpslatitude',
-  'gpslongitude',
-  'gpsaltitude',
 ];
 
 const debugLog = (...args: unknown[]) => {
@@ -208,7 +215,9 @@ const collectExifRows = (
   return rows;
 };
 
-const sortAndLimitExifRows = (rows: ExifRow[]) => {
+// No row cap here: this is a QA screen, so every tag must be inspectable. The
+// section component collapses long lists behind a "더보기" toggle instead.
+const sortExifRows = (rows: ExifRow[]) => {
   const uniqueRows = rows.filter(
     (row, index, self) =>
       self.findIndex(
@@ -222,7 +231,7 @@ const sortAndLimitExifRows = (rows: ExifRow[]) => {
     return preferredIndex === -1 ? preferredExifKeys.length : preferredIndex;
   };
 
-  return uniqueRows.sort((a, b) => scoreRow(a) - scoreRow(b)).slice(0, 16);
+  return uniqueRows.sort((a, b) => scoreRow(a) - scoreRow(b));
 };
 
 const logSelectedAsset = (
@@ -249,13 +258,13 @@ const readAndLogExif = async (
 ): Promise<ExifRow[]> => {
   if (!__DEV__) {
     const tags = await getImageExif({ imagePath });
-    return sortAndLimitExifRows(collectExifRows(tags));
+    return sortExifRows(collectExifRows(tags));
   }
 
   try {
     const tags = await getImageExif({ imagePath });
     debugLog(`${label}_tags: `, tags);
-    return sortAndLimitExifRows(collectExifRows(tags));
+    return sortExifRows(collectExifRows(tags));
   } catch (error) {
     debugLog(`${label}_tags_error: `, error);
     return [];
@@ -280,10 +289,15 @@ const createResult = (
   ...fields,
 });
 
+// Distinct from any test photo's real coordinates (Seoul ~37.56/126.86) so an
+// injected override is visibly different in the EXIF panel: Busan City Hall.
+const QA_INJECT_COORDS = { latitude: 35.1796, longitude: 129.0756 };
+
 const convertPickedAsset = async (
   asset: Asset,
   index: number,
-  source: PickerSource
+  source: PickerSource,
+  convertOptions: ConvertImageOptions
 ): Promise<PickedImageResult> => {
   const assetNumber = index + 1;
 
@@ -306,7 +320,7 @@ const convertPickedAsset = async (
   });
 
   try {
-    const convertedUri = await convertImage(asset.uri);
+    const convertedUri = await convertImage(asset.uri, convertOptions);
     debugLog(
       `${source}_selected_${assetNumber}_converted_path: `,
       convertedUri
@@ -363,20 +377,41 @@ type ExifSectionProps = {
   rows: ExifRow[];
 };
 
+const COLLAPSED_EXIF_ROW_COUNT = 16;
+
 function ExifSection({ title, rows }: ExifSectionProps) {
+  const [expanded, setExpanded] = useState(false);
+  const hiddenCount = rows.length - COLLAPSED_EXIF_ROW_COUNT;
+  const visibleRows =
+    expanded || hiddenCount <= 0
+      ? rows
+      : rows.slice(0, COLLAPSED_EXIF_ROW_COUNT);
+
   return (
     <View style={styles.exifBox}>
-      <Text style={styles.exifTitle}>{title}</Text>
+      <Text style={styles.exifTitle}>
+        {title} ({rows.length})
+      </Text>
       {rows.length === 0 ? (
         <Text style={styles.exifEmptyText}>표시할 EXIF 정보가 없습니다.</Text>
       ) : (
-        rows.map((row, index) => (
+        visibleRows.map((row, index) => (
           <View key={`${row.label}-${index}`} style={styles.exifRow}>
             <Text style={styles.exifLabel}>{row.label}</Text>
             <Text style={styles.exifValue}>{row.value}</Text>
           </View>
         ))
       )}
+      {hiddenCount > 0 ? (
+        <TouchableOpacity
+          style={styles.exifMoreButton}
+          onPress={() => setExpanded(!expanded)}
+        >
+          <Text style={styles.exifMoreText}>
+            {expanded ? '접기' : `더보기 (${hiddenCount}개 더)`}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }
@@ -437,6 +472,15 @@ export default function App() {
     '사진첩에서 이미지를 선택하거나 카메라로 촬영해 변환 결과를 확인하세요.'
   );
   const [results, setResults] = useState<PickedImageResult[]>([]);
+  const [stripExif, setStripExif] = useState(false);
+  const [stripGps, setStripGps] = useState(false);
+  const [injectGps, setInjectGps] = useState(false);
+
+  const buildConvertOptions = (): ConvertImageOptions => ({
+    stripExif,
+    stripGps,
+    ...(injectGps ? { gps: QA_INJECT_COORDS } : null),
+  });
 
   const processPickerResponse = async (
     source: PickerSource,
@@ -490,7 +534,9 @@ export default function App() {
       setStatusMessage(
         `${sourceLabel} 이미지 ${index + 1}/${pickedAssets.length} 변환 중...`
       );
-      convertedResults.push(await convertPickedAsset(asset, index, source));
+      convertedResults.push(
+        await convertPickedAsset(asset, index, source, buildConvertOptions())
+      );
     }
     const successCount = convertedResults.filter(
       (result) => result.convertedUri
@@ -544,6 +590,44 @@ export default function App() {
     await runPicker('camera', () => launchCamera(cameraOptions));
   };
 
+  // QA-only: convert a file pushed via `adb push` to the app external dir,
+  // bypassing the gallery picker so GPS EXIF survives (MediaStore redacts
+  // location from picker results unless ACCESS_MEDIA_LOCATION is granted AND
+  // the picker calls setRequireOriginal — image-picker does neither).
+  const handleQaSampleFile = async () => {
+    setIsProcessing(true);
+    setResults([]);
+    const samplePath = `file://${RNFS.ExternalDirectoryPath}/qa-sample.heic`;
+    setStatusMessage(`QA 샘플 변환 중... (${samplePath})`);
+    try {
+      const exists = await RNFS.exists(
+        `${RNFS.ExternalDirectoryPath}/qa-sample.heic`
+      );
+      if (!exists) {
+        setStatusMessage(
+          'QA 샘플 파일이 없습니다. adb push 로 qa-sample.heic 를 올려주세요.'
+        );
+        return;
+      }
+      const result = await convertPickedAsset(
+        { uri: samplePath } as Asset,
+        0,
+        'library',
+        buildConvertOptions()
+      );
+      setResults([result]);
+      setStatusMessage(
+        result.convertedUri
+          ? 'QA 샘플 변환 완료 — 원본/변환 EXIF를 비교하세요.'
+          : `QA 샘플 변환 실패: ${result.errorMessage ?? '알 수 없는 오류'}`
+      );
+    } catch (error) {
+      setStatusMessage(`QA 샘플 처리 오류: ${getErrorMessage(error)}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
@@ -573,6 +657,61 @@ export default function App() {
         >
           <Text style={styles.buttonText}>카메라로 촬영</Text>
         </TouchableOpacity>
+        {isAndroid ? (
+          <TouchableOpacity
+            disabled={isProcessing}
+            style={[
+              styles.button,
+              styles.qaButton,
+              isProcessing ? styles.buttonDisabled : null,
+            ]}
+            onPress={handleQaSampleFile}
+          >
+            <Text style={styles.buttonText}>QA 샘플 파일 변환 (GPS 보존)</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      <View style={styles.optionsBox}>
+        <View style={styles.optionRow}>
+          <View style={styles.optionTextColumn}>
+            <Text style={styles.optionLabel}>EXIF 전체 제거</Text>
+            <Text style={styles.optionHint}>
+              방향(Orientation)만 남기고 모든 메타데이터 삭제
+            </Text>
+          </View>
+          <Switch
+            disabled={isProcessing}
+            value={stripExif}
+            onValueChange={setStripExif}
+          />
+        </View>
+        <View style={styles.optionRow}>
+          <View style={styles.optionTextColumn}>
+            <Text style={styles.optionLabel}>GPS만 제거</Text>
+            <Text style={styles.optionHint}>
+              위치 정보만 삭제하고 나머지 EXIF는 보존
+            </Text>
+          </View>
+          <Switch
+            disabled={isProcessing || stripExif}
+            value={stripExif || stripGps}
+            onValueChange={setStripGps}
+          />
+        </View>
+        <View style={[styles.optionRow, styles.optionRowLast]}>
+          <View style={styles.optionTextColumn}>
+            <Text style={styles.optionLabel}>GPS 주입 (부산 좌표)</Text>
+            <Text style={styles.optionHint}>
+              변환본에 35.1796/129.0756 기록 — strip보다 우선
+            </Text>
+          </View>
+          <Switch
+            disabled={isProcessing}
+            value={injectGps}
+            onValueChange={setInjectGps}
+          />
+        </View>
       </View>
 
       <View style={styles.statusBox}>
@@ -626,6 +765,9 @@ const styles = StyleSheet.create({
   secondaryButton: {
     backgroundColor: '#0f766e',
   },
+  qaButton: {
+    backgroundColor: '#7c3aed',
+  },
   buttonDisabled: {
     opacity: 0.55,
   },
@@ -633,6 +775,39 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 17,
     fontWeight: '700',
+  },
+  optionsBox: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e5e7eb',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomColor: '#f1f5f9',
+    borderBottomWidth: 1,
+  },
+  optionRowLast: {
+    borderBottomWidth: 0,
+  },
+  optionTextColumn: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  optionLabel: {
+    color: '#111827',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  optionHint: {
+    color: '#6b7280',
+    fontSize: 12,
+    marginTop: 2,
   },
   statusBox: {
     minHeight: 56,
@@ -748,6 +923,18 @@ const styles = StyleSheet.create({
   exifEmptyText: {
     color: '#6b7280',
     fontSize: 12,
+  },
+  exifMoreButton: {
+    alignItems: 'center',
+    marginTop: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#f1f5f9',
+  },
+  exifMoreText: {
+    color: '#2563eb',
+    fontSize: 13,
+    fontWeight: '600',
   },
   errorText: {
     color: '#b91c1c',

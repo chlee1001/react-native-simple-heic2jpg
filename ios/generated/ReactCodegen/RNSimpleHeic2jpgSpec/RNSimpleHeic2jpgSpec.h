@@ -32,13 +32,32 @@
 
 
 NS_ASSUME_NONNULL_BEGIN
+namespace JS {
+  namespace NativeSimpleHeic2jpg {
+    struct ConvertNativeOptions {
+      bool stripExif() const;
+      bool stripGps() const;
+      std::optional<double> gpsLatitude() const;
+      std::optional<double> gpsLongitude() const;
 
+      ConvertNativeOptions(NSDictionary *const v) : _v(v) {}
+    private:
+      NSDictionary *_v;
+    };
+  }
+}
+
+@interface RCTCxxConvert (NativeSimpleHeic2jpg_ConvertNativeOptions)
++ (RCTManagedPointer *)JS_NativeSimpleHeic2jpg_ConvertNativeOptions:(id)json;
+@end
 @protocol NativeSimpleHeic2jpgSpec <RCTBridgeModule, RCTTurboModule>
 
 - (void)convertImageAtPath:(NSString *)path
+                   options:(JS::NativeSimpleHeic2jpg::ConvertNativeOptions &)options
                    resolve:(RCTPromiseResolveBlock)resolve
                     reject:(RCTPromiseRejectBlock)reject;
 - (void)convertImageAtPathAsBase64:(NSString *)path
+                           options:(JS::NativeSimpleHeic2jpg::ConvertNativeOptions &)options
                            resolve:(RCTPromiseResolveBlock)resolve
                             reject:(RCTPromiseRejectBlock)reject;
 
@@ -62,6 +81,25 @@ namespace facebook::react {
     NativeSimpleHeic2jpgSpecJSI(const ObjCTurboModule::InitParams &params);
   };
 } // namespace facebook::react
-
+inline bool JS::NativeSimpleHeic2jpg::ConvertNativeOptions::stripExif() const
+{
+  id const p = _v[@"stripExif"];
+  return RCTBridgingToBool(p);
+}
+inline bool JS::NativeSimpleHeic2jpg::ConvertNativeOptions::stripGps() const
+{
+  id const p = _v[@"stripGps"];
+  return RCTBridgingToBool(p);
+}
+inline std::optional<double> JS::NativeSimpleHeic2jpg::ConvertNativeOptions::gpsLatitude() const
+{
+  id const p = _v[@"gpsLatitude"];
+  return RCTBridgingToOptionalDouble(p);
+}
+inline std::optional<double> JS::NativeSimpleHeic2jpg::ConvertNativeOptions::gpsLongitude() const
+{
+  id const p = _v[@"gpsLongitude"];
+  return RCTBridgingToOptionalDouble(p);
+}
 NS_ASSUME_NONNULL_END
 #endif // RNSimpleHeic2jpgSpec_H

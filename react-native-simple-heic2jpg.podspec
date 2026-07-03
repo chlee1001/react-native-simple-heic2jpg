@@ -15,6 +15,17 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/chlee1001/react-native-simple-heic2jpg.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,m,mm,swift}"
+  # The library sources glob would otherwise pull the XCTest files into the main
+  # target and double-compile them; the test_spec below owns ios/Tests exclusively.
+  s.exclude_files = "ios/Tests/**/*"
+
+  # Unit tests for the native strip / metadata logic. Runs as an independent test
+  # spec so the example app's RN 0.85 Podfile (which omits the inner test target)
+  # stays untouched. `pod install` picks this up and `xcodebuild test` runs it.
+  s.test_spec "Tests" do |test_spec|
+    test_spec.source_files = "ios/Tests/**/*.{m,mm,swift}"
+    test_spec.frameworks = "XCTest", "ImageIO", "CoreImage"
+  end
 
   # Use install_modules_dependencies helper to install the dependencies if React Native version >=0.71.0.
   # See https://github.com/facebook/react-native/blob/febf6b7f33fdb4904669f99d795eba4c0f95d7bf/scripts/cocoapods/new_architecture.rb#L79.

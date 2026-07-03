@@ -58,21 +58,98 @@ const base64 = await convertImage(path, { returnBase64: true });
 
 `content://` URIs are not supported by this release. Resolve them to a local file path before calling `convertImage`.
 
+### Stripping metadata
+
+Pass `stripExif` or `stripGps` to drop metadata from the converted JPEG:
+
+```js
+// Remove GPS only (keeps camera info, dates, orientation)
+await convertImage(path, { stripGps: true });
+
+// Remove all EXIF/GPS except the orientation tag
+await convertImage(path, { stripExif: true });
+```
+
+- `stripGps: true` removes only GPS tags.
+- `stripExif: true` removes all EXIF and GPS metadata except the orientation tag (which is kept so the image still renders upright). `stripExif` implies `stripGps`.
+- Both default to `false`.
+
+Stripping only applies to **HEIC/HEIF inputs that are converted**. JPEG and PNG inputs are passed through without re-encoding, so their metadata is returned untouched — `convertImage(jpgPath, { stripGps: true })` does not modify the original JPEG.
+
+### Injecting GPS coordinates
+
+Pass `gps` to write coordinates into the converted JPEG:
+
+```js
+await convertImage(path, {
+  gps: { latitude: 37.5665, longitude: 126.978 },
+});
+```
+
+- The injected coordinates replace whatever GPS the source carried.
+- Injection wins over `stripGps` / `stripExif` for the GPS block only: strip removes the source GPS first, then the provided coordinates are written. Other EXIF is unaffected.
+- Signed decimal degrees; the hemisphere refs (N/S, E/W) are derived from the sign.
+- **HEIC/HEIF input**: coordinates are written onto the converted JPEG.
+- **JPEG input**: normally a pass-through, but when `gps` is provided the JPEG is copied (metadata rewritten, pixels not re-encoded) and the returned path points to the injected copy — the original file is never mutated. Camera captures, which arrive as JPEG, get GPS this way.
+- **PNG input**: always a pass-through; PNG has no reliable EXIF container, so `gps` is ignored.
+
+This pairs with the photo-picker section below: when Android's system picker hands you a file with zeroed GPS, your app can re-attach coordinates it knows from another source (its own location fix, MediaStore query, or user input).
+
+> Platform note: on iOS, `stripExif` removes the EXIF and GPS metadata blocks but may retain camera make/model fields stored in the TIFF block. GPS is removed on both platforms; Android's `stripExif` also drops make/model. Full parity is deferred to a future major release.
+
+### GPS metadata and the Android photo picker
+
+If the converted output has no GPS tags even though the original photo has them, check **how the input file reached your app** before suspecting this library. On Android, files returned by the system photo picker (`PICK_IMAGES` / `PickVisualMedia`) have their GPS EXIF values zeroed out by the OS before your app ever sees the bytes. This is Android's scoped-storage location redaction ([the system hides location information by default](https://developer.android.com/training/data-storage/shared/media)), and it cannot be bypassed for picker URIs — `MediaStore.setRequireOriginal()` is rejected for them even with the `ACCESS_MEDIA_LOCATION` permission (AOSP `PickerUriResolver`: "Require Original is not supported for Picker URI").
+
+This library preserves GPS whenever the input file actually contains it. To feed it GPS-bearing inputs on Android, use a path the OS does not redact:
+
+- files your app already owns on disk (app storage, downloads you wrote, camera output)
+- the Storage Access Framework / documents picker (`ACTION_OPEN_DOCUMENT`)
+- a MediaStore URI resolved with `ACCESS_MEDIA_LOCATION` + `MediaStore.setRequireOriginal()`, copied to a local file first (`content://` is not accepted directly — see the input path contract)
+
+### EXIF orientation policy
+
+Both platforms preserve the EXIF orientation **tag** but do **not** rotate the pixels:
+
+- The converted JPEG carries the source's `Orientation` tag unchanged.
+- The pixel data is written unrotated (Android decodes raw pixels with `BitmapFactory`; iOS keeps the `CIImage` unrotated).
+- Your app — or the image component you render with — is responsible for interpreting the orientation tag, exactly as it would for the original HEIC.
+
+This behavior is identical on iOS and Android.
+
 ### Return value
 
 By default, the JavaScript API resolves to a `file://` URI string.
 
 - HEIC/HEIF input: returns the converted JPEG file URI.
-- JPEG/PNG input: returns the original file URI.
+- JPEG input: returns the original file URI — unless `gps` is provided, in which case it returns a new injected-copy URI (the original is left untouched).
+- PNG input: returns the original file URI (`gps` is ignored).
 
 When `returnBase64` is `true`, the JavaScript API resolves to a raw base64 string.
 
 - HEIC/HEIF input: returns the converted JPEG bytes as base64.
-- JPEG/JPG/PNG input: returns the original file bytes as base64.
+- JPEG/JPG input: returns the original file bytes as base64 — unless `gps` is provided, in which case it returns the injected copy's bytes.
+- PNG input: returns the original file bytes as base64 (`gps` is ignored).
 - The returned string does not include a `file://` prefix.
 - The returned string does not include a `data:image/...;base64,` prefix. Add one in your app if your target component requires a data URI.
 - HEIC/HEIF base64 mode may use temporary/cache files internally so the returned base64 comes from finalized JPEG bytes with preserved metadata. Generated temporary/cache files are cleaned after encoding.
 - Base64 increases memory usage compared with URI mode, so URI mode remains the default and is recommended for large images.
+
+## Error handling
+
+The promise rejects on failure. New failure paths carry a stable `error.code` you can branch on:
+
+| `error.code` | Platform | When |
+| --- | --- | --- |
+| `E_HEIF_UNSUPPORTED_OS` | Android | HEIC/HEIF decode attempted below Android 9 (API 28), where the platform has no HEIF decoder. |
+| `E_HEIF_DECODE_FAILED` | Android | The input could not be decoded (corrupt or not a real HEIC/HEIF). |
+| `E_UNSUPPORTED_URI` | Android | A `content://` URI was passed. Resolve it to a local file path first. |
+
+### Platform differences
+
+- **`content://` rejection** happens on both platforms, but the code differs: Android rejects with `E_UNSUPPORTED_URI`, while iOS rejects with its existing `Unsupported URI` code. The codes are intentionally left unaligned in this release to avoid changing the established iOS code (a breaking change); full alignment is deferred to a future major.
+- **Pass-through inputs** (JPEG/PNG) are never re-encoded, so `stripExif` / `stripGps` have no effect on them on either platform.
+- **Existing iOS reject codes** (for example `Unsupported Image Format`) are unchanged in this release.
 
 ## License
 

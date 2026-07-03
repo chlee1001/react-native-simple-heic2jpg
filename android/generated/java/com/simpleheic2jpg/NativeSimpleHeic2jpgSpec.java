@@ -17,6 +17,7 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.turbomodule.core.interfaces.TurboModule;
 import javax.annotation.Nonnull;
 
@@ -34,9 +35,9 @@ public abstract class NativeSimpleHeic2jpgSpec extends ReactContextBaseJavaModul
 
   @ReactMethod
   @DoNotStrip
-  public abstract void convertImageAtPath(String path, Promise promise);
+  public abstract void convertImageAtPath(String path, ReadableMap options, Promise promise);
 
   @ReactMethod
   @DoNotStrip
-  public abstract void convertImageAtPathAsBase64(String path, Promise promise);
+  public abstract void convertImageAtPathAsBase64(String path, ReadableMap options, Promise promise);
 }

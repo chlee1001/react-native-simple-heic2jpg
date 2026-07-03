@@ -2,6 +2,7 @@ package com.simpleheic2jpg
 
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 
 
@@ -11,12 +12,12 @@ class SimpleHeic2jpgModule(reactContext: ReactApplicationContext?) :
 
   override fun getName() = SimpleHeic2jpgModuleImpl.NAME
 
-  override fun convertImageAtPath(path: String, promise: Promise) {
-    SimpleHeic2jpgModuleImpl.convertImageAtPath(reactApplicationContext, path, promise)
+  override fun convertImageAtPath(path: String, options: ReadableMap?, promise: Promise) {
+    SimpleHeic2jpgModuleImpl.convertImageAtPath(reactApplicationContext, path, options, promise)
   }
 
-  override fun convertImageAtPathAsBase64(path: String, promise: Promise) {
-    SimpleHeic2jpgModuleImpl.convertImageAtPathAsBase64(reactApplicationContext, path, promise)
+  override fun convertImageAtPathAsBase64(path: String, options: ReadableMap?, promise: Promise) {
+    SimpleHeic2jpgModuleImpl.convertImageAtPathAsBase64(reactApplicationContext, path, options, promise)
   }
 }
 

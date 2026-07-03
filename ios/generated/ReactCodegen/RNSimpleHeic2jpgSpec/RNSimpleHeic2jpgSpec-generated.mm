@@ -23,24 +23,29 @@
 }
 @end
 
-
+@implementation RCTCxxConvert (NativeSimpleHeic2jpg_ConvertNativeOptions)
++ (RCTManagedPointer *)JS_NativeSimpleHeic2jpg_ConvertNativeOptions:(id)json
+{
+  return facebook::react::managedPointer<JS::NativeSimpleHeic2jpg::ConvertNativeOptions>(json);
+}
+@end
 namespace facebook::react {
   
     static facebook::jsi::Value __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPath(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
-      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "convertImageAtPath", @selector(convertImageAtPath:resolve:reject:), args, count);
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "convertImageAtPath", @selector(convertImageAtPath:options:resolve:reject:), args, count);
     }
 
     static facebook::jsi::Value __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPathAsBase64(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
-      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "convertImageAtPathAsBase64", @selector(convertImageAtPathAsBase64:resolve:reject:), args, count);
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "convertImageAtPathAsBase64", @selector(convertImageAtPathAsBase64:options:resolve:reject:), args, count);
     }
 
   NativeSimpleHeic2jpgSpecJSI::NativeSimpleHeic2jpgSpecJSI(const ObjCTurboModule::InitParams &params)
     : ObjCTurboModule(params) {
       
-        methodMap_["convertImageAtPath"] = MethodMetadata {1, __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPath};
+        methodMap_["convertImageAtPath"] = MethodMetadata {2, __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPath};
+        setMethodArgConversionSelector(@"convertImageAtPath", 1, @"JS_NativeSimpleHeic2jpg_ConvertNativeOptions:");
         
-        
-        methodMap_["convertImageAtPathAsBase64"] = MethodMetadata {1, __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPathAsBase64};
-        
+        methodMap_["convertImageAtPathAsBase64"] = MethodMetadata {2, __hostFunction_NativeSimpleHeic2jpgSpecJSI_convertImageAtPathAsBase64};
+        setMethodArgConversionSelector(@"convertImageAtPathAsBase64", 1, @"JS_NativeSimpleHeic2jpg_ConvertNativeOptions:");
   }
 } // namespace facebook::react
