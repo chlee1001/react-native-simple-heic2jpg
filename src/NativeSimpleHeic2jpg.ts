@@ -8,6 +8,11 @@ import { TurboModuleRegistry, NativeModules } from 'react-native';
 export type ConvertNativeOptions = {
   stripExif: boolean;
   stripGps: boolean;
+  // JPEG encode quality for HEIC/HEIF → JPEG conversions, as an integer 0–100.
+  // Non-optional: the public API (src/index.tsx) always fills a default before
+  // crossing the boundary, so native never has to guess. Ignored for JPEG/PNG
+  // pass-through inputs, which are not re-encoded.
+  quality: number;
   // Optional GPS injection: when both are present, the converted JPEG's GPS
   // EXIF is written from these values (overriding stripGps for the GPS block).
   // Optional (not defaulted) because absence — not a sentinel — means "do not inject".

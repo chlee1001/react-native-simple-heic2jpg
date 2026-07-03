@@ -123,11 +123,11 @@ object SimpleHeic2jpgModuleImpl {
     throw IOException("Failed to create image conversion cache file.")
   }
 
-  private fun saveBitmapToCache(context: ReactApplicationContext, bitmap: Bitmap): String {
+  private fun saveBitmapToCache(context: ReactApplicationContext, bitmap: Bitmap, quality: Int): String {
     val cacheFile = createCacheFile(ensureCacheDir(context))
     try {
       FileOutputStream(cacheFile).use { outputStream ->
-        if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)) {
+        if (!bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)) {
           throw IOException("Failed to encode image as JPEG.")
         }
       }
@@ -195,8 +195,7 @@ object SimpleHeic2jpgModuleImpl {
   // Copies whitelisted EXIF tags from srcPath onto dstPath.
   // stripGps: drop GPS tags only. stripExif: drop everything except orientation
   // (orientation must survive because BitmapFactory does not rotate pixels — the tag
-  // is the only thing keeping the image upright). P0 callers pass false/false; the
-  // strip branches are wired up here so P1 only has to thread the options through.
+  // is the only thing keeping the image upright).
   //
   // Orientation policy: tag preserved, pixels NOT rotated. BitmapFactory.decodeFile
   // returns raw, unrotated pixels, so copying TAG_ORIENTATION leaves the consumer to
@@ -247,11 +246,22 @@ object SimpleHeic2jpgModuleImpl {
   private fun ReadableMap?.optionDouble(key: String): Double? =
     if (this != null && this.hasKey(key) && !this.isNull(key)) this.getDouble(key) else null
 
+  // Reads the JPEG quality option, clamped to 0–100. The JS wrapper always sends a
+  // normalized default (80), so absence only happens for a direct native caller — default
+  // to 80 to match. Read as a Double (a JS number can marshal as a double even when
+  // integral) and round rather than truncate, matching the wrapper.
+  internal fun ReadableMap?.optionQuality(): Int {
+    val value =
+      if (this != null && this.hasKey("quality") && !this.isNull("quality")) this.getDouble("quality") else 80.0
+    return Math.round(value).toInt().coerceIn(0, 100)
+  }
+
   private fun convertHeicToCache(
     context: ReactApplicationContext,
     correctedFilePath: String,
     stripExif: Boolean,
     stripGps: Boolean,
+    quality: Int,
     gpsLatitude: Double?,
     gpsLongitude: Double?
   ): String {
@@ -276,7 +286,7 @@ object SimpleHeic2jpgModuleImpl {
 
     var cachePath: String? = null
     try {
-      cachePath = saveBitmapToCache(context, bitmap)
+      cachePath = saveBitmapToCache(context, bitmap, quality)
       copyExif(correctedFilePath, cachePath, stripExif, stripGps, gpsLatitude, gpsLongitude)
       return cachePath
     } catch (ex: Exception) {
@@ -320,6 +330,7 @@ object SimpleHeic2jpgModuleImpl {
             correctedFilePath,
             options.optionFlag("stripExif"),
             options.optionFlag("stripGps"),
+            options.optionQuality(),
             options.optionDouble("gpsLatitude"),
             options.optionDouble("gpsLongitude")
           )
@@ -361,6 +372,7 @@ object SimpleHeic2jpgModuleImpl {
           correctedFilePath,
           options.optionFlag("stripExif"),
           options.optionFlag("stripGps"),
+          options.optionQuality(),
           options.optionDouble("gpsLatitude"),
           options.optionDouble("gpsLongitude")
         )

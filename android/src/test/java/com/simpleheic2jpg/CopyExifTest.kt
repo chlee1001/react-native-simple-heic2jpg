@@ -46,8 +46,8 @@ class CopyExifTest {
     val exif = ExifInterface(src.absolutePath)
     exif.setAttribute(ExifInterface.TAG_MAKE, "TestMake")
     exif.setAttribute(ExifInterface.TAG_MODEL, "TestModel")
-    // TAG_SOFTWARE is one of the tags added to the whitelist in P0; an IFD0 string,
-    // so it round-trips reliably and proves the expanded whitelist is honored.
+    // TAG_SOFTWARE is a whitelisted IFD0 string, so it round-trips reliably and
+    // proves the whitelist is honored.
     exif.setAttribute(ExifInterface.TAG_SOFTWARE, "UnitTestSoftware")
     exif.setAttribute(
       ExifInterface.TAG_ORIENTATION,

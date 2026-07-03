@@ -34,6 +34,7 @@ describe('convertImage', () => {
     expect(mockConvertImageAtPath).toHaveBeenCalledWith('/tmp/input.heic', {
       stripExif: false,
       stripGps: false,
+      quality: 80,
     });
     expect(mockConvertImageAtPathAsBase64).not.toHaveBeenCalled();
   });
@@ -54,7 +55,7 @@ describe('convertImage', () => {
     ).resolves.toBe('abc123+/=');
     expect(mockConvertImageAtPathAsBase64).toHaveBeenCalledWith(
       '/tmp/input.heic',
-      { stripExif: false, stripGps: false }
+      { stripExif: false, stripGps: false, quality: 80 }
     );
     expect(mockConvertImageAtPath).not.toHaveBeenCalled();
   });
@@ -66,6 +67,7 @@ describe('convertImage', () => {
     expect(mockConvertImageAtPath).toHaveBeenCalledWith('/tmp/input.heic', {
       stripExif: false,
       stripGps: true,
+      quality: 80,
     });
   });
 
@@ -78,6 +80,7 @@ describe('convertImage', () => {
     expect(mockConvertImageAtPath).toHaveBeenCalledWith('/tmp/input.heic', {
       stripExif: false,
       stripGps: false,
+      quality: 80,
       gpsLatitude: 35.1796,
       gpsLongitude: 129.0756,
     });
@@ -95,6 +98,7 @@ describe('convertImage', () => {
       {
         stripExif: false,
         stripGps: false,
+        quality: 80,
         gpsLatitude: -33.8688,
         gpsLongitude: 151.2093,
       }
@@ -166,5 +170,44 @@ describe('convertImage', () => {
     await expect(
       convertImage('/tmp/input.heic', { returnBase64: true })
     ).rejects.toBe(nativeError);
+  });
+
+  it('forwards an explicit quality to native', async () => {
+    mockConvertImageAtPath?.mockResolvedValue('file:///tmp/output.jpeg');
+
+    await convertImage('/tmp/input.heic', { quality: 60 });
+    expect(mockConvertImageAtPath).toHaveBeenCalledWith('/tmp/input.heic', {
+      stripExif: false,
+      stripGps: false,
+      quality: 60,
+    });
+  });
+
+  it('clamps quality above 100 down to 100', async () => {
+    mockConvertImageAtPath?.mockResolvedValue('file:///tmp/output.jpeg');
+
+    await convertImage('/tmp/input.heic', { quality: 150 });
+    expect(mockConvertImageAtPath?.mock.calls[0]?.[1]?.quality).toBe(100);
+  });
+
+  it('clamps negative quality up to 0', async () => {
+    mockConvertImageAtPath?.mockResolvedValue('file:///tmp/output.jpeg');
+
+    await convertImage('/tmp/input.heic', { quality: -10 });
+    expect(mockConvertImageAtPath?.mock.calls[0]?.[1]?.quality).toBe(0);
+  });
+
+  it('rounds a fractional quality to an integer', async () => {
+    mockConvertImageAtPath?.mockResolvedValue('file:///tmp/output.jpeg');
+
+    await convertImage('/tmp/input.heic', { quality: 72.6 });
+    expect(mockConvertImageAtPath?.mock.calls[0]?.[1]?.quality).toBe(73);
+  });
+
+  it('throws when quality is not a number', async () => {
+    await expect(
+      // @ts-expect-error exercising a runtime guard against bad input
+      convertImage('/tmp/input.heic', { quality: 'high' })
+    ).rejects.toThrow('quality must be a number between 0 and 100');
   });
 });
