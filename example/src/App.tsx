@@ -60,6 +60,9 @@ type PickedImageResult = {
   mimeType?: string;
   width?: number;
   height?: number;
+  sourceFileSize?: number;
+  convertedFileSize?: number;
+  qualityUsed?: number;
   errorMessage?: string;
 };
 
@@ -136,6 +139,49 @@ const getErrorMessage = (error: unknown) => {
     return error.message;
   }
   return String(error);
+};
+
+const stripFileScheme = (uri: string) =>
+  uri.startsWith('file://') ? uri.replace(/^file:\/\//, '') : uri;
+
+const formatBytes = (bytes?: number): string => {
+  if (bytes === undefined || Number.isNaN(bytes)) {
+    return '알 수 없음';
+  }
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  const kb = bytes / 1024;
+  if (kb < 1024) {
+    return `${kb.toFixed(1)} KB`;
+  }
+  return `${(kb / 1024).toFixed(2)} MB`;
+};
+
+// Percentage change from source to converted, e.g. " (-66%)". Empty when either
+// size is unknown so the meta line stays clean.
+const formatSizeDelta = (from?: number, to?: number): string => {
+  if (!from || to === undefined) {
+    return '';
+  }
+  const pct = Math.round(((to - from) / from) * 100);
+  const sign = pct > 0 ? '+' : '';
+  return ` (${sign}${pct}%)`;
+};
+
+// stat the converted file to report its on-disk byte size. The source size comes
+// from the picker's asset.fileSize; the converted file is a real file:// path.
+const readFileSize = async (uri?: string): Promise<number | undefined> => {
+  if (!uri) {
+    return undefined;
+  }
+  try {
+    const stat = await RNFS.stat(stripFileScheme(uri));
+    return typeof stat.size === 'number' ? stat.size : Number(stat.size);
+  } catch (error) {
+    debugLog('file_size_error: ', error);
+    return undefined;
+  }
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -286,12 +332,18 @@ const createResult = (
   mimeType: asset.type,
   width: asset.width,
   height: asset.height,
+  sourceFileSize: asset.fileSize,
   ...fields,
 });
 
 // Distinct from any test photo's real coordinates (Seoul ~37.56/126.86) so an
 // injected override is visibly different in the EXIF panel: Busan City Hall.
 const QA_INJECT_COORDS = { latitude: 35.1796, longitude: 129.0756 };
+
+// JPEG quality presets for the QA selector. Only the HEIC→JPEG re-encode path
+// honors quality; JPEG/PNG pass-throughs ignore it (see the pass-through badge).
+const QUALITY_PRESETS = [40, 60, 80, 100];
+const DEFAULT_QUALITY = 80;
 
 const convertPickedAsset = async (
   asset: Asset,
@@ -329,11 +381,14 @@ const convertPickedAsset = async (
       `${source}_converted_${assetNumber}`,
       convertedUri
     );
+    const convertedFileSize = await readFileSize(convertedUri);
 
     return createResult(asset, index, source, {
       convertedUri,
       convertedExifRows,
       sourceExifRows,
+      convertedFileSize,
+      qualityUsed: convertOptions.quality,
     });
   } catch (error) {
     debugLog(`${source}_selected_${assetNumber}_convertImage_error: `, error);
@@ -422,6 +477,12 @@ type ImageResultCardProps = {
 };
 
 function ImageResultCard({ result, index }: ImageResultCardProps) {
+  // JPEG/PNG inputs are returned untouched by the library (resolve(path)), so the
+  // converted URI is identical to the source. That is why size stays at 0% and
+  // strip/quality do not apply — surface it explicitly rather than looking like a bug.
+  const isPassthrough =
+    !!result.convertedUri && result.convertedUri === result.sourceUri;
+
   return (
     <View style={styles.resultCard}>
       <Text style={styles.resultTitle}>
@@ -435,6 +496,20 @@ function ImageResultCard({ result, index }: ImageResultCardProps) {
           ? `${result.width} x ${result.height}`
           : '이미지 크기 정보 없음'}
       </Text>
+      <Text style={styles.metaText}>
+        용량: {formatBytes(result.sourceFileSize)}
+        {result.convertedFileSize !== undefined
+          ? ` → ${formatBytes(result.convertedFileSize)}${formatSizeDelta(
+              result.sourceFileSize,
+              result.convertedFileSize
+            )}`
+          : ''}
+      </Text>
+      {!isPassthrough && result.qualityUsed !== undefined ? (
+        <Text style={styles.metaText}>
+          변환 품질(quality): {result.qualityUsed}
+        </Text>
+      ) : null}
 
       <View style={styles.previewRow}>
         <PreviewPane
@@ -449,6 +524,19 @@ function ImageResultCard({ result, index }: ImageResultCardProps) {
           placeholder="변환 실패"
         />
       </View>
+
+      {result.convertedUri ? (
+        <Text
+          style={[
+            styles.badgeText,
+            isPassthrough ? styles.badgeWarn : styles.badgeOk,
+          ]}
+        >
+          {isPassthrough
+            ? '⚠︎ 원본 그대로 통과 (JPEG/PNG 입력 → 재인코딩·strip·quality 미적용)'
+            : '✓ HEIC→JPEG 재인코딩됨 (strip·quality·GPS 주입 적용 대상)'}
+        </Text>
+      ) : null}
 
       {result.convertedUri ? (
         <Text numberOfLines={2} style={styles.uriText}>
@@ -475,10 +563,12 @@ export default function App() {
   const [stripExif, setStripExif] = useState(false);
   const [stripGps, setStripGps] = useState(false);
   const [injectGps, setInjectGps] = useState(false);
+  const [quality, setQuality] = useState(DEFAULT_QUALITY);
 
   const buildConvertOptions = (): ConvertImageOptions => ({
     stripExif,
     stripGps,
+    quality,
     ...(injectGps ? { gps: QA_INJECT_COORDS } : null),
   });
 
@@ -699,7 +789,7 @@ export default function App() {
             onValueChange={setStripGps}
           />
         </View>
-        <View style={[styles.optionRow, styles.optionRowLast]}>
+        <View style={styles.optionRow}>
           <View style={styles.optionTextColumn}>
             <Text style={styles.optionLabel}>GPS 주입 (부산 좌표)</Text>
             <Text style={styles.optionHint}>
@@ -711,6 +801,41 @@ export default function App() {
             value={injectGps}
             onValueChange={setInjectGps}
           />
+        </View>
+        <View style={[styles.qualityBlock, styles.optionRowLast]}>
+          <Text style={styles.optionLabel}>JPEG 품질 (quality)</Text>
+          <Text style={styles.optionHint}>
+            HEIC→JPEG 재인코딩에만 적용 · 현재 {quality}
+          </Text>
+          <View style={styles.qualityButtons}>
+            {QUALITY_PRESETS.map((preset, presetIndex) => {
+              const selected = quality === preset;
+              return (
+                <TouchableOpacity
+                  key={preset}
+                  disabled={isProcessing}
+                  onPress={() => setQuality(preset)}
+                  style={[
+                    styles.qualityChip,
+                    presetIndex === QUALITY_PRESETS.length - 1
+                      ? styles.qualityChipLast
+                      : null,
+                    selected ? styles.qualityChipSelected : null,
+                    isProcessing ? styles.buttonDisabled : null,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.qualityChipText,
+                      selected ? styles.qualityChipTextSelected : null,
+                    ]}
+                  >
+                    {preset}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       </View>
 
@@ -794,6 +919,40 @@ const styles = StyleSheet.create({
   },
   optionRowLast: {
     borderBottomWidth: 0,
+  },
+  qualityBlock: {
+    paddingVertical: 12,
+    borderBottomColor: '#f1f5f9',
+    borderBottomWidth: 1,
+  },
+  qualityButtons: {
+    flexDirection: 'row',
+    marginTop: 10,
+  },
+  qualityChip: {
+    flex: 1,
+    marginRight: 8,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+  },
+  qualityChipLast: {
+    marginRight: 0,
+  },
+  qualityChipSelected: {
+    borderColor: '#2563eb',
+    backgroundColor: '#eff6ff',
+  },
+  qualityChipText: {
+    color: '#4b5563',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  qualityChipTextSelected: {
+    color: '#2563eb',
   },
   optionTextColumn: {
     flex: 1,
@@ -889,6 +1048,19 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontSize: 12,
     lineHeight: 18,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 17,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  badgeWarn: {
+    color: '#b45309',
+  },
+  badgeOk: {
+    color: '#047857',
   },
   exifBox: {
     backgroundColor: '#f9fafb',
