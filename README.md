@@ -1,3 +1,5 @@
+
+
 # react-native-simple-heic2jpg
 
 React Native native module for converting local HEIC/HEIF images to JPEG on Android and iOS.
@@ -148,6 +150,7 @@ When `returnBase64` is `true`, the JavaScript API resolves to a raw base64 strin
 - HEIC/HEIF input: returns the converted JPEG bytes as base64.
 - JPEG/JPG input: returns the original file bytes as base64 — unless `gps` is provided, in which case it returns the injected copy's bytes.
 - PNG input: returns the original file bytes as base64 (`gps` is ignored).
+- Other file extensions are rejected when `returnBase64` is `true`.
 - The returned string does not include a `file://` prefix.
 - The returned string does not include a `data:image/...;base64,` prefix. Add one in your app if your target component requires a data URI.
 - HEIC/HEIF base64 mode may use temporary/cache files internally so the returned base64 comes from finalized JPEG bytes with preserved metadata. Generated temporary/cache files are cleaned after encoding.
